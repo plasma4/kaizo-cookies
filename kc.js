@@ -1,3 +1,5 @@
+// window.kaizo_load_local = window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+window.kaizo_load_local = true // We'll figure this out latter
 var decay = {};
 var kaizoCookiesVer = 'v1.0';
 var kaizoCookies = null;
@@ -9,7 +11,6 @@ if (typeof Cookieclysm === 'undefined') { window.Cookieclysm = null; }
 
 //additional helper functions
 var upgradeDescsToReplace = [];
-window.kaizo_load_local = window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
 
 function replaceDesc(name, toReplaceWith, keepFlavorText) {
 	if (!Game.ready) { upgradeDescsToReplace.push([name, toReplaceWith]); return; } 
