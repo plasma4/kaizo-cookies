@@ -317,7 +317,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 
 		this.images = {
-			custImg: window.kaizo_load_local?'/img/modicons.png':(App?this.dir+'/modicons.png':'https://cursedsliver.github.io/asdoindwalk/modicons.png'),
+			custImg: window.kaizo_load_local?'img/modicons.png':(App?this.dir+'/modicons.png':'https://cursedsliver.github.io/asdoindwalk/modicons.png'),
 			bigGolden: App?this.dir+'/bigGoldenCookie.png':'https://cursedsliver.github.io/asdoindwalk/bigGoldenCookie.png',
 			bigWrath: App?this.dir+'/bigWrathCookie.png':'https://cursedsliver.github.io/asdoindwalk/bigWrathCookie.png',
 			classic: App?this.dir+'/classicCookie.png':'https://cursedsliver.github.io/asdoindwalk/classicCookie.png',
