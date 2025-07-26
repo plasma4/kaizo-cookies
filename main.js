@@ -16892,7 +16892,7 @@ window.onload=function()
 						if (inject) {
 							setTimeout(function(){eval(inject)},250);
 						}
-						if(localStorage.getItem('CookieClickerLang'))setTimeout(function(){Game.LoadMod("kc.js")},200)
+						if(localStorage.getItem('CookieClickerLang'))setTimeout(function(){window.kaizo_load_local = true; Game.LoadMod("kc.js")},200)
 						if (top!=self) Game.ErrorFrame();
 						else
 						{
