@@ -1011,19 +1011,20 @@
 		});
 	}
 
+	Crumbs.objectBehaviors.cookieClickPopupBehavior = new Crumbs.behavior(function() {
+		this.alpha -= 1 / (4 * Game.fps);
+		if (this.alpha <= 0) { 
+			this.die(); 
+			return; 
+		}
+		this.y -= 60 / Game.fps;
+	});
 	Crumbs.cookieClickPopup = {
 		order: 8,
 		id: 'cookieClickText',
 		scope: 'left',
 		anchor: 'bottom',
-		behaviors: new Crumbs.behaviorInstance(function() {
-			this.alpha -= 1 / (4 * Game.fps);
-			if (this.alpha <= 0) { 
-				this.die(); 
-				return; 
-			}
-			this.y -= 2;
-		})
+		behaviors: new Crumbs.behaviorInstance(Crumbs.objectBehaviors.cookieClickPopupBehavior)
 	}
 	Crumbs.spawnCookieClickPopup = function(x, y, text) {
 		if (!Game.prefs.numbers) { return; }
