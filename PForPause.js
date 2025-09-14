@@ -251,6 +251,19 @@ Game.registerMod('P for Pause', {
             subtree: true,
             attributeFilter: ["class", "style"]
         });
+
+        Game.registerHook('logic', function() {
+            const now = Date.now();
+            PForPause.cumulativeRealTime += (now - PForPause.lastFrame) * PForPause.timeFactor;
+            PForPause.lastFrame = now;
+        });
+
+        this.changeMinigame('Farm', ['soilTooltip', 'buildPanel']);
+        //this.changeMinigame('Bank', []);
+        this.changeMinigame('Temple', ['useSwap']);
+        this.changeMinigame('Wizard tower', [], function(M) {
+            eval('M.logic='+M.logic.toString().replace('M.magic+=M.magicPS', 'M.magic+=M.magicPS * PForPause.timeFactor'));
+        });
     },
     changeGameSpeed: function(mult, noCSSUpdates) {
         if (typeof mult != 'number' || mult < 0) { return; }
@@ -329,6 +342,32 @@ Game.registerMod('P for Pause', {
     },
     addGameSpeedHook: function(func) {
         this.onChangeHooks.push(func);
+    },
+    lastFrame: Date.now(),
+    cumulativeRealTime: Date.now(), //ms
+    changeMinigame: function(building, additionalFunctions, func) {
+        const change = function() {
+            const M = Game.Objects[building].minigame;
+            eval('M.logic='+M.logic.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
+            eval('M.draw='+M.draw.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
+            if (M.reset) {
+                eval('M.reset='+M.reset.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
+            }
+            for (let i in additionalFunctions) {
+                eval('M.'+additionalFunctions[i]+'='+M[additionalFunctions[i]].toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
+            }
+            func && func(M);
+        }
+        if (Game.Objects[building].minigameLoaded) {
+            change();
+        } else {
+            const interval = setInterval(function() {
+                if (Game.Objects[building].minigameLoaded) {
+                    change();
+                    clearInterval(interval);
+                }
+            }, 10);
+        }
     },
     checkAnimTWasAMultipleOf: function(int) {
         //utility for stuff that triggers every x ticks, but want to use animT
