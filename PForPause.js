@@ -177,11 +177,12 @@ Game.registerMod('P for Pause', {
             .replace('Game.researchT==0', 'Game.researchT<=0')
             .replace('Game.T%Math.ceil(Game.fps/Math.min(10,Game.cookiesPs))==0', 'PForPause.checkAnimTWasAMultipleOf(Math.ceil(Game.fps/Math.min(10,Game.cookiesPs)))')
             .replace('Game.BigCookieSizeD+=(Game.BigCookieSizeT-Game.BigCookieSize)*0.75;', 'Game.BigCookieSizeD+=(Game.BigCookieSizeT-Game.BigCookieSize)*0.75 * PForPause.timeFactor;')
-            .replace('Game.BigCookieSizeD*=0.75;', 'Game.BigCookieSizeD*=Math.pow(0.75, PForPause.timeFactor);')
+            .replace('Game.BigCookieSizeD*=0.75;', 'Game.BigCookieSizeD*=Math.pow(0.75, Math.pow(PForPause.timeFactor, 2));')
             .replace('Game.BigCookieSize+=Game.BigCookieSizeD;', 'Game.BigCookieSize+=Game.BigCookieSizeD * PForPause.timeFactor;')
             .replace('Game.sparklesT--;', 'Game.sparklesT -= PForPause.timeFactor;')
             .replace('Game.sparklesFrames-Game.sparklesT+1', 'Game.sparklesFrames-Math.floor(Game.sparklesT)+1')
             .replace('if (Game.sparklesT==1)', 'if (Game.sparklesT<=1)')
+            .replace('-Game.T*', '-Game.animT*')
             .replace('Game.ascendMeterPercent+=(Game.ascendMeterPercentT-Game.ascendMeterPercent)*0.1;', 'Game.ascendMeterPercent+=(Game.ascendMeterPercentT-Game.ascendMeterPercent)*0.1*PForPause.timeFactor;')
             .replace('Game.T%15==0', 'PForPause.checkAnimTWasAMultipleOf(15)')
             .replace('Game.milkHd+=(Game.milkH-Game.milkHd)*0.02', 'Game.milkHd+=(Game.milkH-Game.milkHd)*0.02*PForPause.timeFactor')
@@ -259,10 +260,15 @@ Game.registerMod('P for Pause', {
         });
 
         this.changeMinigame('Farm', ['soilTooltip', 'buildPanel']);
-        //this.changeMinigame('Bank', []);
+        this.changeMinigame('Bank', [], function(M) {
+            eval('M.logic='+M.logic.toString().replace('M.tickT++;', 'M.tickT += PForPause.timeFactor;'));
+        });
         this.changeMinigame('Temple', ['useSwap']);
         this.changeMinigame('Wizard tower', [], function(M) {
-            eval('M.logic='+M.logic.toString().replace('M.magic+=M.magicPS', 'M.magic+=M.magicPS * PForPause.timeFactor'));
+            eval('M.logic='+M.logic.toString()
+                .replace('M.magic+=M.magicPS', 'M.magic+=M.magicPS * PForPause.timeFactor')
+            );
+            eval('M.draw='+M.draw.toString().replace('-Game.T*', '-Game.animT*'));
         });
     },
     changeGameSpeed: function(mult, noCSSUpdates) {
@@ -348,13 +354,17 @@ Game.registerMod('P for Pause', {
     changeMinigame: function(building, additionalFunctions, func) {
         const change = function() {
             const M = Game.Objects[building].minigame;
-            eval('M.logic='+M.logic.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
-            eval('M.draw='+M.draw.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
-            if (M.reset) {
+            if (M.logic.toString().includes('Date.now()')) { 
+                eval('M.logic='+M.logic.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
+            }
+            if (M.draw.toString().includes('Date.now()')) {
+                eval('M.draw='+M.draw.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
+            }
+            if (M.reset && M.reset.toString().includes('Date.now()')) {
                 eval('M.reset='+M.reset.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
             }
             for (let i in additionalFunctions) {
-                eval('M.'+additionalFunctions[i]+'='+M[additionalFunctions[i]].toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
+                eval('M["'+additionalFunctions[i]+'"]='+M[additionalFunctions[i]].toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
             }
             func && func(M);
         }
