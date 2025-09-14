@@ -4221,9 +4221,9 @@ Game.registerMod("Kaizo Cookies", {
 			if (this.grabbed) {
 				if (!this.getComponent('pointerInteractive').click && !Game.keys[65]) { this.grabbed = false; }
 				p.dx += ((Math.min(this.scope.mouseX, this.scope.l.width) - this.x)) * 0.2;
-				p.dx *= Math.pow(0.9, t);
+				p.dx *= Math.pow(0.9, 1 / t);
 				p.dy += ((this.y - this.scope.mouseY)) * 0.2;
-				p.dy *= Math.pow(0.9, t);
+				p.dy *= Math.pow(0.9, 1 / t);
 				this.x = Math.min(this.scope.mouseX, this.scope.l.width);
 				this.y = this.scope.mouseY;
 				this.lastGrab = Crumbs.t;
@@ -4315,7 +4315,7 @@ Game.registerMod("Kaizo Cookies", {
 			components: [new Crumbs.component.pointerInteractive({ 
 				boundingType: 'oval', 
 				onClick: function() { 
-					if (decay.grabbedObj.length >= 1) { return; }
+					if (decay.grabbedObj.length || !decay.gameCan.grabInteractables) { return; }
 					
 					this.grabbed = true; 
 					decay.grabbedObj.push(this); 
@@ -4742,7 +4742,7 @@ Game.registerMod("Kaizo Cookies", {
 			xd: 0,
 			yd: 0,
 			rd: 0,
-			components: new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length) { return; } this.grabbed = true; decay.grabbedObj.push(this); }, onRelease: function() { this.grabbed = false; if (decay.grabbedObj.includes(this)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } } })
+			components: new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length || !decay.gameCan.grabInteractables) { return; } this.grabbed = true; decay.grabbedObj.push(this); }, onRelease: function() { this.grabbed = false; if (decay.grabbedObj.includes(this)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } } })
 		}
 		decay.saveLumpToys = function() {
 			const all = Crumbs.getObjects('lump');
@@ -4826,7 +4826,7 @@ Game.registerMod("Kaizo Cookies", {
 			behaviors: [new Crumbs.behaviorInstance(decay.phantomEssenceBehavior), new Crumbs.behaviorInstance(decay.wSoulDeposit, { target: 'phantomEssence' })],
 			components: new Crumbs.component.pointerInteractive({ 
 				boundingType: 'oval', 
-				onClick: function() { if (decay.grabbedObj.length) { return; } this.grabbed = true; decay.grabbedObj.push(this); }, 
+				onClick: function() { if (decay.grabbedObj.length || !decay.gameCan.grabInteractables) { return; } this.grabbed = true; decay.grabbedObj.push(this); }, 
 				onRelease: function() { 
 					this.grabbed = false; 
 					decay.phantomCertifiedWrinklerSelect = null;
@@ -5042,7 +5042,7 @@ Game.registerMod("Kaizo Cookies", {
 			init: decay.scrollCollectibleInit,
 			behaviors: [new Crumbs.behaviorInstance(decay.toyCollectibleBehavior, { frictionInMilk: 0.8, friction: 0.95, floatSpeed: 30, mouseMomentumAddFactor: 0.2, grabRDSlowdownFactor: 0.5, bounceRotationFactor: 0.05, bounceMomentumFactor: 0, gravity: 15 }), new Crumbs.behaviorInstance(decay.scrollCollectibleBehavior)],
 			components: [
-				new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length) { return; } this.grabbed = true; decay.grabbedObj.push(this); }, onRelease: function() { this.grabbed = false; if (decay.grabbedObj.includes(this)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } } }),
+				new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length || !decay.gameCan.grabInteractables) { return; } this.grabbed = true; decay.grabbedObj.push(this); }, onRelease: function() { this.grabbed = false; if (decay.grabbedObj.includes(this)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this), 1); } } }),
 				new Crumbs.component.tooltip({ content: function() { return '<div style="padding: 3px; width: 150px; text-align: center; line-height: 120%;">' + ((this.completionTime < Crumbs.t - this.t)?loc('<b>Complete!</b><br>Drag into the big cookie and hold for a few seconds to claim it!'):loc('<b>%1</b><br>until completion', Game.sayTime(this.completionTime - (Crumbs.t - this.t), -1))) + '</div>'; }, boundingType: 'oval', origin: 'bottom', crate: true })
 			]
 		};
@@ -6451,7 +6451,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (Game.Has('Unshackled Elder Pledge')) { str *= 1.25; }
 				var cap = 6;
 				if (Game.Has('Elder Pact')) { cap *= 1.1; }
-				return [1 + (str / Game.fps), 0.5 / (Game.getPledgeDuration() * cap), cap];
+				return [Math.pow(1 + (str / Game.fps), PForPause.timeFactor), 1 - Math.pow(1 - 0.5 / (Game.getPledgeDuration() * cap), PForPause.timeFactor), cap];
 			}
 			Game.getPledgeCooldown = function () {
 				var c = Game.fps * 7.5 * 60;
@@ -10522,7 +10522,7 @@ Game.registerMod("Kaizo Cookies", {
 				width: 32,
 				height: 32,
 				order: 15,
-				components: new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length) { return; } this.parent.grabbed = true; decay.grabbedObj.push(this.parent); }, onRelease: function() { this.parent.grabbed = false; if (decay.grabbedObj.includes(this.parent)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this.parent), 1); } }}),
+				components: new Crumbs.component.pointerInteractive({ boundingType: 'oval', onClick: function() { if (decay.grabbedObj.length || !decay.gameCan.grabInteractables) { return; } this.parent.grabbed = true; decay.grabbedObj.push(this.parent); }, onRelease: function() { this.parent.grabbed = false; if (decay.grabbedObj.includes(this.parent)) { decay.grabbedObj.splice(decay.grabbedObj.indexOf(this.parent), 1); } }}),
 				behaviors: function() {
 					//console.log(this.getComponent('pointerInteractive').hovered);
 				}
@@ -12249,7 +12249,8 @@ Game.registerMod("Kaizo Cookies", {
 			releasePhantomEssences: true, //good
 			condenseSouls: true, //good
 			toggleAutoClaim: true, //good
-			togglePowerchannel: true //good
+			togglePowerchannel: true, //good
+			grabInteractables: true //good
 		}
 		decay.copyGameCan = function() { 
 			for (let i in decay.gameCan) {
