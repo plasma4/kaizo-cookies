@@ -280,7 +280,7 @@ Game.registerMod("Kaizo Cookies", {
 				<br><br>${loc('While you may export and import your main save into the new save, doing so is <b>highly discouraged</b>, is <b>cheating</b>, and will likely <b>heavily break the game</b>.')}
 				<div class="line"></div>
 				${loc('Once you\'ve read and understood the above, click <b>Let\'s go!</b> to start playing. Enjoy!')}
-			</div>`, [[loc('Let\'s go!'), 'Game.HardReset(2); Game.SaveTo = "kaizoCookiesSave"; kaizoCookies.loadWrapper(); Game.ClosePrompt();'], [loc('Nevermind'), 'Game.ClosePrompt();']], 0, 'widePrompt');
+			</div>`, [[loc('Let\'s go!'), 'Game.HardReset(2); Game.SaveTo = "kaizoCookiesSave"; kaizoCookies.loadWrapper(); Game.Notify(loc("Fetching assets..."), "", 6); Game.ClosePrompt();'], [loc('Nevermind'), 'Game.ClosePrompt();']], 0, 'widePrompt');
 		}
 	},
 	modWarn: function(modList) {
@@ -294,7 +294,7 @@ Game.registerMod("Kaizo Cookies", {
 		</div>`, [['Ok', 'Game.ClosePrompt();'], ['I know what I\'m doing!', 'Game.ClosePrompt(); kaizoCookies.callHeader();']], 0, 'widePrompt');
 	},
 	exemptMods: ['Kaizo Cookies', 'Crumbs engine', 'buffTimerFix', 'P for Pause'],
-	langPatched: EN,
+	langPatched: false,
 	patchLanguage: function(lang, name, o) {
 		AddLanguage(lang, name, o, this);
 
