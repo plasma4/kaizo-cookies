@@ -224,7 +224,7 @@ Game.registerMod("Kaizo Cookies", {
 		//language
 		const lang = localStorageGet('CookieClickerLang');
 		if (lang && this.langPatches[lang]) {
-			LoadScript(((App || window.load_all_assets_internally)?'':'https://cursedsliver.github.io/asdoindwalk')+this.langPatches[lang]);
+			LoadScript(((App || window.load_all_assets_internally)?'':'https://cursedsliver.github.io/asdoindwalk/')+this.langPatches[lang]);
 		} 
 		if (App) { if (CrumbsEngineLoaded) { this.header(); } else { Game.Notify(loc('Incorrect loading order!'), loc('Please restart the game, and load Crumbs Engine before Kaizo cookies.'), 0); } return; }
 		if (typeof CrumbsEngineLoaded === 'undefined' || !CrumbsEngineLoaded) { 
