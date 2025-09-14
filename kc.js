@@ -453,7 +453,7 @@ Game.registerMod("Kaizo Cookies", {
 			kaizoCookies.lastPause = Game.animT;
 		}
 		Game.registerHook('logic', function() {
-			if (decay.pausingCooldown) { decay.pausingCooldown -= PForPause.timeFactor; }
+			if (decay.pausingCooldown > 0) { decay.pausingCooldown = Math.max(decay.pausingCooldown - PForPause.timeFactor, 0); }
 		});
 		this.skippedGameCanOnPause = ['openStats', 'closeNotifs'];
 		this.skippedGameCanOnPauseWithEasyPurchases = ['openStats', 'closeNotifs', 'buyUpgrades', 'buyAllUpgrades', 'castSpells', 'changeTickspeed', 'closeMinigames', 'interactDragon', 'levelUpBuildings', 'plant', 'refillMinigames', 'scrollNews', 'selectSeeds', 'sellGoods', 'slotAuras', 'slotGods', 'takeLoans', 'toggleAutoClaim', 'togglePowerchannel', 'toggleUpgrades', 'upgradeOffice', 'useGardenTools', 'viewMinigames'];
@@ -494,13 +494,14 @@ Game.registerMod("Kaizo Cookies", {
 		AddEvent(document, 'keydown', function(e) {
 			if (Game.OnAscend || Game.AscendTimer) { return; }
 			if (e.key.toLowerCase() == 'control') {
-				kaizoCookies.toggleTimeSlow(true);
+				kaizoCookies.toggleTimeSlow(decay.prefs.ctrlToToggle?(!decay.timeIsSlowed):true);
 				l('hotkeyHoldText').style.textDecoration = 'underline';
 			}
 		});
 		AddEvent(document, 'keyup', function(e) {
 			if (e.key.toLowerCase() == 'control') {
 				l('hotkeyHoldText').style.textDecoration = '';
+				if (decay.prefs.ctrlToToggle) { return; }
 				if (Game.OnAscend || Game.AscendTimer) { return; }
 				kaizoCookies.toggleTimeSlow(false);
 			}
@@ -792,7 +793,8 @@ Game.registerMod("Kaizo Cookies", {
 			easyTyping: 1,
 			scrollCDDisplay: 1,
 			prestigeProgressDisplay: 1,
-			strongTimeSlow: 1
+			strongTimeSlow: 1,
+			ctrlToToggle: 0
 		}
 		Game.TCount = 0;
 
@@ -876,11 +878,12 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (Game.pledgeC > 0) {
 				Game.pledgeC -= PForPause.timeFactor;
-				if (Game.pledgeC == 0) {
+				if (Game.pledgeC <= 0) {
 					Game.Upgrades["Elder Pledge"].icon[0] = 9;
 					Game.Upgrades["Elder Pledge"].icon[1] = 9;
 					Game.Upgrades["Elder Pledge"].icon[2] = 'img/icons.png';
 					Game.upgradesToRebuild = 1;
+					Game.pledgeC = 0;
 					Game.Lock('Elder Pledge');
 					Game.Unlock('Elder Pledge');
 					Game.Notify(loc('Elder Pledge restored!'), '', 0);
@@ -2236,6 +2239,7 @@ Game.registerMod("Kaizo Cookies", {
 				str += decay.writePrefButton('RunTimer','RunTimerButton',loc("Show run timer")+' ON',loc("Show run timer")+' OFF', 'if (decay.prefs.RunTimer) { l(\'Timer\').style.display = \'\'; } else { l(\'Timer\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the run started stat.')+')</label><br>';
 				str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
 				str += decay.writePrefButton('prestigeProgressDisplay', 'prestigeProgressDisplayButton',loc('Prestige progress display')+' ON',loc('Prestige progress display')+' OFF', 'if (Game.prestige > 0 && Game.ascensionMode != 1) { if (decay.prefs.prestigeProgressDisplay) { decay.togglePreP(true); } else { decay.togglePreP(false); } }')+'<label>('+loc('Displays current amount of prestige unleashed; only appears after ascending')+')</label><br>';
+				str += decay.writePrefButton('ctrlToToggle', 'ctrlToToggleButton',loc("Time slow toggle mode")+' ON',loc("Time slow toggle mode")+' OFF')+'<label>('+loc('Changes the behavior of the ctrl key on time slowing; if on, ctrl toggles time slow, else time is only slowed while holding it')+')</label><br>';
 				str += '<div class="line"></div>';
 				if (!decay.lockedPreset) {
 					str += decay.writePrefButton('easyPurchases', 'easyPurchasesButton', loc('Convenient purchasing')+' ON', loc('Convenient purchasing')+' OFF')+'<label>('+loc('Assist option; allows you to perform simple actions such as purchasing upgrades, interacting with minigames, and using switches while paused.')+')</label><br>';
@@ -7729,7 +7733,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (typeof gp === 'undefined') { console.log('grimoire1 failed. gp: '+gp); return false; }
 			if (l('grimoireInfo') === null) { console.log('grimoire2 failed. grimoireInfo:'+l('grimoireInfo')); return false; } 
 			if (typeof gp.spells === 'undefined') { console.log('grimoire3 failed. gp.spells: '+gp.spells); return false; }
-			var M = gp;
+			const M = gp;
 			//lump integration
 			
 			decay.addSpells();
@@ -7765,8 +7769,7 @@ Game.registerMod("Kaizo Cookies", {
 
 			M.updateLumpLocks();
 
-			eval('gp.logic='+gp.logic.toString().replace('M.magicPS=Math.max(0.002,Math.pow(M.magic/Math.max(M.magicM,100),0.5))*0.002;', 'M.magicPS = Math.min(1.5, decay.gen) * Game.eff(\'magicRegenSpeed\') * Math.max(0.003,Math.pow(M.magic/Math.max(M.magicM,100),0.5))*0.003*(1 * Game.Has("Mana-enhanced magic"))*(decay.isConditional("dualcast")?2:1);'));
-			eval('gp.logic='+replaceAll('M.','gp.',gp.logic.toString()));
+			eval('gp.logic='+gp.logic.toString().replace('M.magicPS=Math.max(0.002,Math.pow(M.magic/Math.max(M.magicM,100),0.5))*0.002;', 'M.magicPS = Math.min(1.5, decay.gen) * Game.eff(\'magicRegenSpeed\') * Math.max(0.003,Math.pow(M.magic/Math.max(M.magicM,100),0.5))*0.003*(1 + Game.Has("Mana-enhanced magic"))*(decay.isConditional("dualcast")?2:1);'));
 			eval("gp.spells['spontaneous edifice'].win=" + Game.Objects['Wizard tower'].minigame.spells['spontaneous edifice'].win.toString().replace("{if ((Game.Objects[i].amount<max || n==1) && Game.Objects[i].getPrice()<=Game.cookies*2 && Game.Objects[i].amount<400) buildings.push(Game.Objects[i]);}", "{if (Game.Objects[i].amount>0 && decay.seFrees[Game.Objects[i].id] < 20) buildings.push(Game.Objects[i]);}").replace('building.buyFree(1);', 'decay.seFrees[building.id] += 5; building.getFree(5);'));
 			gp.spells['spontaneous edifice'].fail = function() {
 				for (let i in Game.Objects) {
@@ -7782,8 +7785,7 @@ Game.registerMod("Kaizo Cookies", {
 			eval('gp.draw='+gp.draw.toString().replace(`Math.min(Math.floor(M.magicM),Beautify(M.magic))+'/'+Beautify(Math.floor(M.magicM))+(M.magic<M.magicM?(' ('+loc("+%1/s",Beautify((M.magicPS||0)*Game.fps,2))+')'):'')`,
 													 `Math.min(Math.floor(M.magicM),Beautify(M.magic))+'/'+Beautify(Math.floor(M.magicM))+(M.magic<M.magicM?(' ('+loc("+%1/min",Beautify((M.magicPS||0)*Game.fps*60,3))+')'):'')`)
 				.replace(`loc("Spells cast: %1 (total: %2)",[Beautify(M.spellsCast),Beautify(M.spellsCastTotal)]);`,
-					 `loc(((decay.spellsCastTotalNGM==M.spellsCastTotal)?"Spells cast: %1 (total: %2)":"Spells cast: %1 (total: %2; cross-legacies total: %3)"),[Beautify(M.spellsCast),Beautify(M.spellsCastTotal),Beautify(decay.spellsCastTotalNGM)]); M.infoL.innerHTML+="; "+loc("Magic regen multiplier from %1: %2", [decay.term(decay.gen), decay.effectStrs([function(n, i) { return Math.min(1.5, n); }])]); `));
-			eval('gp.draw='+replaceAll('M.','gp.',gp.draw.toString()));		
+					 `loc(((decay.spellsCastTotalNGM==M.spellsCastTotal)?"Spells cast: %1 (total: %2)":"Spells cast: %1 (total: %2; cross-legacies total: %3)"),[Beautify(M.spellsCast),Beautify(M.spellsCastTotal),Beautify(decay.spellsCastTotalNGM)]); M.infoL.innerHTML+="; "+loc("Magic regen multiplier from %1: %2", [decay.term(decay.gen), decay.effectStrs([function(n, i) { return Math.min(1.5, n); }])]); `));	
 			eval('gp.spells["hand of fate"].win='+gp.spells["hand of fate"].win.toString().replace(`if (Game.BuildingsOwned>=10 && Math.random()<0.4) choices.push('building special');`, 'if (Game.BuildingsOwned>=10 && Math.random()<0.25) choices.push("building special"); decay.triggerNotif("fthof");').replace(`if (!Game.hasBuff('Dragonflight')) choices.push('click frenzy');`, '').replace(`if (Math.random()<0.15) choices=['cookie storm drop'];`, `if (Math.random()<decay.getCFChance()) choices=['click frenzy'];`));
 			eval('gp.spells["hand of fate"].fail='+gp.spells["hand of fate"].fail.toString().replace(`if (Math.random()<0.1) choices.push('cursed finger','blood frenzy');`, `if (Math.random()<0.1) choices.push('cursed finger'); decay.triggerNotif("fthof");`));
 			/*makes it so that the tooltips can support custom icons*/eval('gp.spellTooltip='+replaceAll('M.', 'gp.', gp.spellTooltip.toString()));
@@ -13876,7 +13878,7 @@ Game.registerMod("Kaizo Cookies", {
 				}(parseInt(i));
 			}
 
-			new decay.scroll('Scroll of favored resurrection', loc('Type "%1" to make your next click summon a weakened wrinkler with at least one special trait in the direction of the click.', 'res'), 1e8, [28, 6, kaizoCookies.images.custImg], ['Traveler\'s soulbound scroll pouch'], 1000, 1000, 'res', 30, function() {
+			new decay.scroll('Scroll of favored resurrection', loc('Type "%1" to make your next click summon a weakened wrinkler with at least one special trait at the mouse.', 'res'), 1e8, [28, 6, kaizoCookies.images.custImg], ['Traveler\'s soulbound scroll pouch'], 1000, 1000, 'res', 30, function() {
 				if (decay.hasFavoredResurrectionSpawner) {
 					Game.Notify(loc('Scroll activation halted'), loc('There is already an ongoing resurrection!'), [28, 6, kaizoCookies.images.custImg]);
 					return true;
@@ -13900,8 +13902,8 @@ Game.registerMod("Kaizo Cookies", {
 					const centerY = m.scope.l.height * 0.4;
 					const xDiff = m.scope.mouseX - centerX;
 					const yDiff = m.scope.mouseY - centerY;
-					const dist = 188; 
 					const len = Math.sqrt(xDiff * xDiff + yDiff * yDiff) || 1;
+					const dist = Math.max(Math.min(len, 188), 116)
 					const targetX = centerX + (xDiff / len) * dist;
 					const targetY = centerY + (yDiff / len) * dist;
 
@@ -13955,13 +13957,14 @@ Game.registerMod("Kaizo Cookies", {
 				const centerY = m.scope.l.height * 0.4;
 				const xDiff = m.scope.mouseX - centerX;
 				const yDiff = m.scope.mouseY - centerY;
-				const dist = 188; 
 				const len = Math.sqrt(xDiff * xDiff + yDiff * yDiff) || 1;
+				const dist = Math.max(Math.min(len, 188), 116); 
 				const targetX = centerX + (xDiff / len) * dist;
 				const targetY = centerY + (yDiff / len) * dist;
 				
 				const obj = {};
-				obj.rad = Math.atan2(yDiff, xDiff);
+				obj.rad = Math.atan2(-yDiff, xDiff) + Math.PI / 2;
+				obj.dist = (dist - 116) / (188 - 116);
 				const trait = m.special;
 				obj[trait] = true;
 				const w = decay.spawnWrinklerLead(obj);
