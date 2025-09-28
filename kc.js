@@ -3656,6 +3656,7 @@ Game.registerMod("Kaizo Cookies", {
 				Crumbs.spawnFallingCookie(0, 0, Math.random()*-2-2, Math.random()*4-2, 1, 'lumpSmall', true, Math.random()*0.5+0.75, 2, false, [23, 14]);
 			}
 			decay.performTouchOfForce(this);
+			decay.spaceShiftScrollWrinklerClick(this);
 			if (decay.wrinklerRotateValue) { 
 				Crumbs.spawn(decay.lumpShieldTemplate, {
 					x: this.scope.mouseX,
@@ -4163,16 +4164,18 @@ Game.registerMod("Kaizo Cookies", {
 			scaleX: 0.1,
 			scaleY: 0.1,
 			speed: 1.5,
+			fadeSpeed: 1,
+			threshold: 0.2 * Game.fps,
 			rotateSpeed: 0,
 			behaviors: new Crumbs.behaviorInstance(function() {
-				if (Crumbs.t - this.t < 0.2 * Game.fps) {
+				if (Crumbs.t - this.t < this.threshold) {
 					this.scaleX += this.speed * 2 / PForPause.fFps;
 					this.scaleY += this.speed * 2 / PForPause.fFps;
 				}
 				this.scaleX += this.speed / PForPause.fFps;
 				this.scaleY += this.speed / PForPause.fFps;
 				this.rotation += this.rotateSpeed / PForPause.fFps;
-				this.alpha -= 1 / PForPause.fFps;
+				this.alpha -= this.fadeSpeed / PForPause.fFps;
 				if (this.alpha <= 0) { this.die(); }
 			})
 		}
@@ -4642,8 +4645,6 @@ Game.registerMod("Kaizo Cookies", {
 			ctx.beginPath();
 			ctx.lineWidth = m.lineWidth;
 			ctx.strokeStyle = m.color;
-			m.lineWidth -= m.decreaseRate / PForPause.fFps;
-			if (m.lineWidth <= 0) { m.die(); }
 			ctx.moveTo(m.originX, m.originY);
 			ctx.lineTo(m.targetX, m.targetY);
 			ctx.stroke();
@@ -4653,8 +4654,14 @@ Game.registerMod("Kaizo Cookies", {
 			components: new Crumbs.component.canvasManipulator({
 				function: decay.shinySoulConnectLineFunction
 			}),
+			behaviors: new Crumbs.behaviorInstance(function() {
+				this.lineWidth -= this.decreaseRate / PForPause.fFps;
+				if (this.lineWidth <= 0) { this.die(); }
+			}),
 			originX: 0,
 			originY: 0,
+			targetX: 0,
+			targetY: 0,
 			lineWidth: 5,
 			decreaseRate: 3.5,
 			color: '#fffd7b'
@@ -4898,7 +4905,7 @@ Game.registerMod("Kaizo Cookies", {
 						Crumbs.spawn(decay.phantomPullerTemplate, {
 							target: w,
 							radius: 100,
-							strength: 0.015,
+							strength: 0.03,
 							hurtSet: 160,
 							duration: 24,
 							durationMax: 24,
@@ -6303,7 +6310,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		Game.registerHook('click', decay.clickBCStop);
 		decay.bounceBackInForce = 0;
-		Game.lastClickCount = Date.now();
+		Game.lastClickCount = PForPause.cumulativeRealTime;
 		eval('Game.Logic='+Game.Logic.toString()
 			.replace(`//if (Game.BigCookieState==2 && !Game.promptOn && Game.Scroll!=0) Game.ClickCookie();`, `if (Game.bigCookieHovered && !(decay.powerClicksOn() && Game.Has('Mammon') && decay.power >= decay.firstPowerClickReq) && !decay.isConditional('reindeer') && ((decay.prefs.scrollClick && (Game.Scroll!=0 || (Crumbs.pointerHold && !decay.grabbedObj.length))) || (Game.keys[65] && decay.prefs.touchpad) || decay.easyClicksEnable) && !Game.promptOn && Date.now()-Game.lastClickCount >= 105 / PForPause.timeFactor) { Game.ClickCookie(); Game.BigCookieState = 1; decay.bounceBackInForce = 1 + randomFloor(Math.random()); }`)
 			.replace(`Beautify(Game.prestige)]);`, `Beautify(decay.getCpSBoostFromPrestige())]);`)
@@ -8396,7 +8403,7 @@ Game.registerMod("Kaizo Cookies", {
 					enabled: true,
 					func: function() {
 						M.loopsMult=8;
-						M.nextStep=Date.now();
+						M.nextStep=PForPause.cumulativeRealTime;
 					}
 				},
 				growthMinus: {
@@ -8405,7 +8412,7 @@ Game.registerMod("Kaizo Cookies", {
 					enabled: false,
 					func: function() {
 						for (let i = 0; i < 4; i++) {
-							M.nextStep=Date.now();
+							M.nextStep=PForPause.cumulativeRealTime;
 							M.loopsMult=0.4;
 							M.logic();
 						}
@@ -8417,7 +8424,7 @@ Game.registerMod("Kaizo Cookies", {
 					enabled: true,
 					func: function() {
 						for (let i = 0; i < 8; i++) {
-							M.nextStep=Date.now();
+							M.nextStep=PForPause.cumulativeRealTime;
 							M.loopsMult=0.2;
 							M.logic();
 						}
@@ -8429,7 +8436,7 @@ Game.registerMod("Kaizo Cookies", {
 					enabled: false,
 					func: function() {
 						for (let i = 0; i < 16; i++) {
-							M.nextStep=Date.now();
+							M.nextStep=PForPause.cumulativeRealTime;
 							M.loopsMult=0.4;
 							M.logic();
 						}
@@ -8441,7 +8448,7 @@ Game.registerMod("Kaizo Cookies", {
 					enabled: true,
 					func: function() {
 						for (let i = 0; i < 32; i++) {
-							M.nextStep=Date.now();
+							M.nextStep=PForPause.cumulativeRealTime;
 							M.loopsMult=0.2;
 							M.logic();
 						}
@@ -8453,7 +8460,7 @@ Game.registerMod("Kaizo Cookies", {
 					enabled: true,
 					func: function() {
 						M.forceMuts = true;
-						M.nextStep=Date.now();
+						M.nextStep=PForPause.cumulativeRealTime;
 					}
 				}
 			}
@@ -8535,11 +8542,6 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.CalculateGains='+Game.CalculateGains.toString().replace("else if (godLvl==2) buildMult*=1.06;","else if (godLvl==2) buildMult*=1.14;"))
 		eval('Game.CalculateGains='+Game.CalculateGains.toString().replace("else if (godLvl==3) buildMult*=1.03;","else if (godLvl==3) buildMult*=1.08;"))
 		eval('Game.shimmerTypes["golden"].getTimeMod='+Game.shimmerTypes["golden"].getTimeMod.toString().replace('if (godLvl==1) m*=1.1;', 'if (godLvl==1) m*=1.06;').replace('else if (godLvl==2) m*=1.06;', 'else if (godLvl==2) m*=1.04;').replace('else if (godLvl==3) m*=1.03;', 'else if (godLvl==3) m*=1.02;'))
-
-        //Nerfing? Cyclius
-		eval('Game.CalculateGains='+Game.CalculateGains.toString().replace("if (godLvl==1) mult*=0.15*Math.sin((Date.now()/1000/(60*60*3))*Math.PI*2);","if (godLvl==1) mult*=1+0.15*Math.sin((Date.now()/1000/(60*60*12))*Math.PI*2);"));
-		eval('Game.CalculateGains='+Game.CalculateGains.toString().replace("else if (godLvl==2) mult*=1+0.15*Math.sin((Date.now()/1000/(60*60*12))*Math.PI*2);","else if (godLvl==2) mult*=1+0.15*Math.sin((Date.now()/1000/(60*60*24))*Math.PI*2);"));
-		eval('Game.CalculateGains='+Game.CalculateGains.toString().replace("else if (godLvl==3) mult*=1+0.15*Math.sin((Date.now()/1000/(60*60*24))*Math.PI*2);","else if (godLvl==3) mult*=1+0.15*Math.sin((Date.now()/1000/(60*60*48))*Math.PI*2);"));
 
 		//buffing vomitrax (buff contained within)
 		eval('Game.shimmerTypes["golden"].popFunc='+Game.shimmerTypes["golden"].popFunc.toString().replace(`var popup='';`, `var popup=''; mult = Game.goldenGainMult(me.wrath);`));
@@ -8649,10 +8651,6 @@ Game.registerMod("Kaizo Cookies", {
 			temp.gods['labor'].desc2='<span class="green">'+loc("Clicking is <b>%1%</b> more powerful.",20)+'</span> <span class="red">'+loc("Buildings produce %1% less.",2)+'</span>';
 			temp.gods['labor'].desc3='<span class="green">'+loc("Clicking is <b>%1%</b> more powerful.",15)+'</span> <span class="red">'+loc("Buildings produce %1% less.",1)+'</span>';
 
-			temp.gods['ages'].desc1=loc("Effect cycles over %1 hours.",12);
-			temp.gods['ages'].desc2=loc("Effect cycles over %1 hours.",24);
-			temp.gods['ages'].desc3=loc("Effect cycles over %1 hours.",48);
-
 			temp.gods['seasons'].desc1 = '<span class="green">'+loc("Large boost.")+'</span>';
 			temp.gods['seasons'].desc2 = '<span class="green">'+loc("Medium boost.")+'</span>';
 			temp.gods['seasons'].desc3 = '<span class="green">'+loc("Small boost.")+'</span>';
@@ -8683,11 +8681,6 @@ Game.registerMod("Kaizo Cookies", {
 			temp.gods['order'].descAfter = '';
 			delete temp.gods['order'].activeDescFunc;
 
-            //Making Cyclius display the nerf?
-			eval("temp.gods['ages'].activeDescFunc="+Game.Objects['Temple'].minigame.gods['ages'].activeDescFunc.toString().replace("if (godLvl==1) mult*=0.15*Math.sin((Date.now()/1000/(60*60*3))*Math.PI*2);","if (godLvl==1) mult*=0.15*Math.sin((Date.now()/1000/(60*60*12))*Math.PI*2);"));
-			eval("temp.gods['ages'].activeDescFunc="+Game.Objects['Temple'].minigame.gods['ages'].activeDescFunc.toString().replace("else if (godLvl==2) mult*=0.15*Math.sin((Date.now()/1000/(60*60*12))*Math.PI*2);","else if (godLvl==2) mult*=0.15*Math.sin((Date.now()/1000/(60*60*24))*Math.PI*2);"));
-        	eval("temp.gods['ages'].activeDescFunc="+Game.Objects['Temple'].minigame.gods['ages'].activeDescFunc.toString().replace("else if (godLvl==3) mult*=0.15*Math.sin((Date.now()/1000/(60*60*24))*Math.PI*2);","else if (godLvl==3) mult*=0.15*Math.sin((Date.now()/1000/(60*60*48))*Math.PI*2);"));
-
 			temp.gods['decadence'].desc1='<span class="green">'+loc('Golden and wrath cookie gain +%1%.',77)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",7)+'</span>';
 			temp.gods['decadence'].desc2='<span class="green">'+loc('Golden and wrath cookie gain +%1%.',57)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",5)+'</span>';
 			temp.gods['decadence'].desc3='<span class="green">'+loc('Golden and wrath cookie gain +%1%.',37)+'</span> <span class="red">'+loc("Buildings grant -%1% CpS.",2)+'</span>';
@@ -8705,7 +8698,7 @@ Game.registerMod("Kaizo Cookies", {
 				if (decay.challengeStatus('combo3')) { return 0.1; }
 				return 0;
 			}
-			eval('temp.useSwap='+temp.useSwap.toString().replace('M.swapT=Date.now();', 'if (Math.random() < temp.cancelSwapUseChance()) { return; } M.swapT=Date.now();'))
+			eval('temp.useSwap='+temp.useSwap.toString().replace('M.swapT=PForPause.cumulativeRealTime;', 'if (Math.random() < temp.cancelSwapUseChance()) { return; } M.swapT=PForPause.cumulativeRealTime;'))
 
 			Crumbs.h.resolveInjects();
 
@@ -10242,7 +10235,7 @@ Game.registerMod("Kaizo Cookies", {
 					alpha: 0
 				});
 			}
-			for (let i = 0; i < 2 + Game.Has('Belphegor') + Game.Has('Beelzebub'); i++) {
+			for (let i = 0; i < 3 + Game.Has('Belphegor') + Game.Has('Beelzebub'); i++) {
 				Crumbs.spawn(decay.shockwaveTemplate, {
 					x: this.scope.mouseX,
 					y: this.scope.mouseY,
@@ -13763,7 +13756,7 @@ Game.registerMod("Kaizo Cookies", {
 			this.createHeavenlyUpgrade('Voyager', loc('You start non-unshackled decay runs with <b>1 free shipment</b>.')+'<q>Your very first expedition to the unknown, immortalized.</q>', 2.2e9, [25, 16, kaizoCookies.images.custImg], ['Keepsakes'], -1056, -326, Game.Upgrades['Keepsakes'].order + 0.001);
 			this.createHeavenlyUpgrade('Your first idea', loc('You keep the first <b>eight</b> cortex baker upgrades across ascensions.')+'<q>This would sound really dumb, but what if...</q>', 6.6e9, [26, 17, kaizoCookies.images.custImg], ['Voyager'], -1222, -248, Game.Upgrades['Keepsakes'].order + 0.002);
 
-			new decay.scroll('Scroll of charged clicks', loc('Type "aaa" to have big cookie clicks halt decay and builds up fatigue <b>3 times</b> faster for <b>%1</b>.', Game.sayTime(3 * Game.fps)), 4e8, [28, 3, kaizoCookies.images.custImg], ['Scroll of prestige escalation'], 820, 1000, 'aaa', 45, function() { Game.gainBuff('enhancedClicks', 3); });
+			new decay.scroll('Scroll of charged clicks', loc('Type "%1" to have big cookie clicks halt decay and builds up fatigue <b>3 times</b> faster for <b>%2</b>.', ['zap', Game.sayTime(3 * Game.fps)]), 4e8, [28, 3, kaizoCookies.images.custImg], ['Scroll of prestige escalation'], 820, 1000, 'zap', 45, function() { Game.gainBuff('enhancedClicks', 3); });
 			new Game.buffType('enhancedClicks', function(time) {
 				return {
 					name: loc('Enhanced clicks'),
@@ -14060,18 +14053,168 @@ Game.registerMod("Kaizo Cookies", {
 			});
 
 			new decay.scroll('Scroll of space shift', loc('Type "%1" to swap the positions of the next two wrinklers clicked.', 'swap'), 1e8, [28, 7, kaizoCookies.images.custImg], ['Traveler\'s soulbound scroll pouch'], 1000, 1100, 'swap', 50, function() {
-				
+				Crumbs.spawn(decay.spaceShiftScrollMouseManager);
+				decay.spaceShiftScrollActive = true;
+				decay.spaceShiftScrollWrinklers = [];
+				decay.spaceShiftScrollRunes = [];
 			}, { type: 'decorated', rune: [0, 6], hpMult: 2.5, shortDesc: loc('Swaps wrinkler positions') });
-			decay.spaceShiftScrollMouseManager = {
+
+			decay.spaceShiftScrollActive = false;
+			decay.spaceShiftScrollWrinklers = [];
+			decay.spaceShiftScrollRunes = [];
+
+			decay.spaceShiftScrollRuneTemplate = {
 				imgs: [kaizoCookies.images.runes],
 				sx: 0,
 				sy: 6 * 96,
 				width: 96,
 				height: 96,
-				scaleX: 0.75,
-				scaleY: 0.75,
-				
+				scaleX: 1.2,
+				scaleY: 1.2,
+				alpha: 1,
+				order: 4000,
+				scope: 'left',
+				wrinkler: null,
+				behaviors: [new Crumbs.behaviorInstance(function() {
+					if (!this.wrinkler || this.wrinkler.dead) { 
+						this.die(); 
+						decay.spaceShiftScrollActive = false;
+						decay.spaceShiftScrollWrinklers = [];
+						decay.spaceShiftScrollRunes = [];
+						return; 
+					}
+					this.x = this.wrinkler.x;
+					this.y = this.wrinkler.y;
+					this.scaleX = 1.25 + Math.sin(Game.animT / 33) * 0.5;
+					this.scaleY = 1.25 + Math.cos(Game.animT / 23) * 0.5;
+					this.rotation -= 0.02 * PForPause.timeFactor;
+				})]
+			};
+
+			decay.spaceShiftScrollWrinklerClick = function(w) {
+				if (!decay.spaceShiftScrollActive) { return; }
+				if (decay.spaceShiftScrollWrinklers.length == 0) {
+					decay.spaceShiftScrollWrinklers.push(w);
+					//create rune object that follows wrinkler
+					let spawnedRune = Crumbs.spawn(decay.spaceShiftScrollRuneTemplate, { wrinkler: w, scope: w.scope, x: w.x, y: w.y, rotation: Crumbs.findObject('spaceShiftScrollMouseManager').findChild('subRotater').rotation });
+					decay.spaceShiftScrollRunes.push(spawnedRune);
+					Game.Notify(loc('Wrinkler marked!'), loc('Click another wrinkler to swap.'), [28, 7, kaizoCookies.images.custImg]);
+				} else if (decay.spaceShiftScrollWrinklers.length == 1 && w != decay.spaceShiftScrollWrinklers[0]) {
+					decay.spaceShiftScrollWrinklers.push(w);
+					let w1 = decay.spaceShiftScrollWrinklers[0];
+					let w2 = decay.spaceShiftScrollWrinklers[1];
+					let tmpRad = w1.rad;
+					let tmpDist = w1.dist;
+					w1.rad = w2.rad;
+					w1.dist = w2.dist;
+					w2.rad = tmpRad;
+					w2.dist = tmpDist;
+					Crumbs.spawn(decay.shinySoulConnectLineTemplate, {
+						originX: w1.x,
+						originY: w1.y,
+						targetX: w2.x,
+						targetY: w2.y,
+						color: '#d3b6ffff',
+						lineWidth: 7,
+						decreaseRate: 6
+					});
+					const obj = {
+						x: w1.x,
+						y: w1.y,
+						scope: 'left',
+						imgs: [kaizoCookies.images.runes],
+						sx: 0,
+						sy: 6 * 96,
+						width: 96,
+						height: 96,
+						fadeSpeed: 0.5,
+						speed: 1,
+						threshold: 0.25 * Game.fps,
+						alpha: 1,
+						scaleX: decay.spaceShiftScrollRunes[0].scaleX,
+						scaleY: decay.spaceShiftScrollRunes[0].scaleY,
+						rotation: decay.spaceShiftScrollRunes[0].rotation
+					};
+					Crumbs.spawn(decay.lumpShieldTemplate, obj);
+					obj.x = w2.x;
+					obj.y = w2.y;
+					obj.scaleX = Crumbs.findObject('spaceShiftScrollMouseManager').scaleX;
+					obj.scaleY = Crumbs.findObject('spaceShiftScrollMouseManager').scaleY;
+					obj.rotation = Crumbs.findObject('spaceShiftScrollMouseManager').rotation;
+					Crumbs.spawn(decay.lumpShieldTemplate, obj);
+					w1.findChild('wc').t = Crumbs.t;
+					w2.findChild('wc').t = Crumbs.t;
+					//remove rune objects
+					for (let i in decay.spaceShiftScrollRunes) { decay.spaceShiftScrollRunes[i].die(); }
+					decay.spaceShiftScrollRunes = [];
+					Game.Notify(loc('Wrinklers swapped!'), '', [28, 7, kaizoCookies.images.custImg]);
+					decay.spaceShiftScrollActive = false;
+					decay.spaceShiftScrollWrinklers = [];
+				}
 			}
+
+			decay.spaceShiftScrollMouseManager = {
+				imgs: [kaizoCookies.images.runes],
+				id: 'spaceShiftScrollMouseManager',
+				sx: 0,
+				sy: 6 * 96,
+				width: 96,
+				height: 96,
+				alpha: 1,
+				originX: 0,
+				originY: 0,
+				targetX: 0,
+				targetY: 0,
+				lineWidth: 5,
+				color: '#d3b6ffff',
+				behaviors: new Crumbs.behaviorInstance(function() {
+					//draw rune at mouse if waiting for first wrinkler
+					if (decay.spaceShiftScrollActive) {
+						this.x = this.scope.mouseX;
+						this.y = this.scope.mouseY;
+						this.scaleX = 1.25 + Math.sin(Game.animT / 23) * 0.5;
+						this.scaleY = 1.25 + Math.cos(Game.animT / 13) * 0.5;
+						this.rotation += 0.03 * PForPause.timeFactor;
+						this.noDraw = false;
+					} else {
+						this.noDraw = true;
+					}
+					if (decay.spaceShiftScrollActive && decay.spaceShiftScrollWrinklers.length == 1) {
+						//draw line to marked wrinkler
+						this.getComponent('canvasManipulator').enable();
+						let w = decay.spaceShiftScrollWrinklers[0];
+						const [x, y] = Crumbs.h.rv(this.rotation, w.x - this.x, w.y - this.y);
+						this.targetX = x;
+						this.targetY = y;
+					} else {
+						this.getComponent('canvasManipulator').disable();
+					}
+				}),
+				children: [{
+					imgs: [kaizoCookies.images.runes],
+					id: 'subRotater',
+					sx: 0,
+					sy: 6 * 96,
+					width: 96,
+					height: 96,
+					alpha: 1,
+					rotation: 0,
+					behaviors: new Crumbs.behaviorInstance(function() {
+						if (decay.spaceShiftScrollActive && decay.spaceShiftScrollWrinklers.length == 0) {
+							this.scaleX = 1.25 + Math.sin(Game.animT / 33) * 0.5;
+							this.scaleY = 1.25 + Math.cos(Game.animT / 23) * 0.5;
+							this.rotation -= 0.02 * PForPause.timeFactor;
+							this.noDraw = false;
+						} else {
+							this.noDraw = true;
+						}
+					})
+				}],
+				components: new Crumbs.component.canvasManipulator({
+					before: decay.shinySoulConnectLineFunction
+				}),
+			};
+			Crumbs.spawn(decay.spaceShiftScrollMouseManager);
 			Game.last.showIf = function() {
 				return false;
 			}
@@ -14897,14 +15040,15 @@ Game.registerMod("Kaizo Cookies", {
 		console.log('Kaizo Cookies loaded. Save string: '+str);
 		if (kaizoCookies.unpauseGame) { kaizoCookies.unpauseGame(); }
 		this.hasLoaded++;
-		if (!isv(str)) { return; }
+		//if (!isv(str)) { console.log('isv check failed'); return; }
 		str = str.split('/'); 
-		if (!str.length || !kaizoCookies.achievements || !kaizoCookies.achievements.length) { return; }
+		if (!str.length || !kaizoCookies.achievements || !kaizoCookies.achievements.length) { console.log('other checks failed'); return; }
 		Game.CloseNotes();
 		if (Crumbs.mobile) { 
 			Game.Notify('Mobile notice', 'If you are currently using a phone to play Kaizo cookies, we strongly suggest that you use the horizontal orientation (long side on the bottom).', 0, 30);
 		}
 		decay.killAllPowerOrbs();
+		//throw 'e';
 		if (decay.DEBUG) {
 			if (Crumbs.mobile) {
 				Game.Notify('Mobile', '', 0, 100000000, false, true);
