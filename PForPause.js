@@ -2,6 +2,7 @@
 //version 1.1 added a bit of functionality, such as to make it possible to set tick speed
 //version 1.2 fixed most problems and added UI to CCCEM, and made keybinds easy to rebind
 //version 2.0 added time manipulation
+//version 2.1 fixed various bugs and overlooked elements, integrated time slow to all minigames, big cookie clicks no longer act silly at high gamespeeds 
 
 var gamePause=0
 var gardenStepDifference=Game.Objects.Farm.minigame?(Game.Objects.Farm.minigame.nextStep-Date.now()):0
@@ -186,6 +187,7 @@ Game.registerMod('P for Pause', {
             .replace('Game.ascendMeterPercent+=(Game.ascendMeterPercentT-Game.ascendMeterPercent)*0.1;', 'Game.ascendMeterPercent+=(Game.ascendMeterPercentT-Game.ascendMeterPercent)*0.1*PForPause.timeFactor;')
             .replace('Game.T%15==0', 'PForPause.checkAnimTWasAMultipleOf(15)')
             .replace('Game.milkHd+=(Game.milkH-Game.milkHd)*0.02', 'Game.milkHd+=(Game.milkH-Game.milkHd)*0.02*PForPause.timeFactor')
+            .replace('Game.toSave || (Game.T%(Game.fps*60)==0', 'Game.toSave || (PForPause.checkAnimTWasAMultipleOf(Game.fps*60)')
         );
 
         //kc patched
@@ -231,7 +233,10 @@ Game.registerMod('P for Pause', {
         }
 
         //per-frame luck-based events patches
-        eval('Game.updateShimmers='+Game.updateShimmers.toString().replace('Math.pow(Math.max(0,(me.time-me.minTime)/(me.maxTime-me.minTime)),5)', 'PForPause.scaleProbabilitySingle(Math.pow(Math.max(0,(me.time-me.minTime)/(me.maxTime-me.minTime)),5))'));
+        eval('Game.updateShimmers='+Game.updateShimmers.toString()
+            .replace('Math.pow(Math.max(0,(me.time-me.minTime)/(me.maxTime-me.minTime)),5)', 'PForPause.scaleProbabilitySingle(Math.pow(Math.max(0,(me.time-me.minTime)/(me.maxTime-me.minTime)),5))')
+            .replace('Math.random()<0.5', 'Math.random()<PForPause.scaleProbabilityRate(0.5)')
+        );
         eval('Game.UpdateWrinklers='+Game.UpdateWrinklers.toString().replace('Math.random()<chance', 'Math.random()<PForPause.scaleProbabilitySingle(chance)'));
         eval('Game.DrawWrinklers='+Game.DrawWrinklers.toString().replace('Math.random()<0.03', 'Math.random()<PForPause.scaleProbabilityRate(0.03)'));
 
@@ -259,11 +264,11 @@ Game.registerMod('P for Pause', {
             PForPause.lastFrame = now;
         });
 
-        this.changeMinigame('Farm', ['soilTooltip', 'buildPanel']);
+        this.changeMinigame('Farm', ['logic', 'draw', 'reset', 'soilTooltip', 'buildPanel']);
         this.changeMinigame('Bank', [], function(M) {
             eval('M.logic='+M.logic.toString().replace('M.tickT++;', 'M.tickT += PForPause.timeFactor;'));
         });
-        this.changeMinigame('Temple', ['useSwap']);
+        this.changeMinigame('Temple', ['logic', 'draw', 'reset', 'useSwap']);
         this.changeMinigame('Wizard tower', [], function(M) {
             eval('M.logic='+M.logic.toString()
                 .replace('M.magic+=M.magicPS', 'M.magic+=M.magicPS * PForPause.timeFactor')
@@ -354,12 +359,6 @@ Game.registerMod('P for Pause', {
     changeMinigame: function(building, additionalFunctions, func) {
         const change = function() {
             const M = Game.Objects[building].minigame;
-            if (M.logic.toString().includes('Date.now()')) { 
-                eval('M.logic='+M.logic.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
-            }
-            if (M.draw.toString().includes('Date.now()')) {
-                eval('M.draw='+M.draw.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
-            }
             if (M.reset && M.reset.toString().includes('Date.now()')) {
                 eval('M.reset='+M.reset.toString().replaceAll('Date.now()', 'PForPause.cumulativeRealTime'));
             }
