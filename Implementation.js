@@ -1,5 +1,4 @@
-
-	//template objects inits and behaviors
+//template objects inits and behaviors
     Crumbs.objectInits = {}; //inits return array containing x, y, scaleX, scaleY, and rotation, and takes in one variable for scope
 	Crumbs.objectInits.default = function() { };
 	Crumbs.objectDefaults.init = Crumbs.objectInits.default;
