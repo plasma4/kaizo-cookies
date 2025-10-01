@@ -1,5 +1,4 @@
 var decay = {};
-var kaizoCookiesVer = 'v1.0';
 var kaizoCookies = null;
 
 var kaizoWarning = false; //true;
@@ -215,6 +214,7 @@ var stockUpdated = false;
 
 Game.registerMod("Kaizo Cookies", { 
 	name: 'Kaizo cookies',
+	version: 'v1.1',
 	init: function() {
 		if (kaizoCookies || l('topbarFrenzy')) { return; }
 		if (!App) { Game.LoadMod('https://glander.club/asjs/9b1GUwLs'); }
@@ -857,6 +857,7 @@ Game.registerMod("Kaizo Cookies", {
 				decay.recover();
 				decay.updateFatigue();
 				decay.updateFuse();
+				decay.updateDecayBreakingEffects();
 				if (decay.momentumUnlocked) { decay.momentum = decay.updateMomentum(decay.momentum); }
 				Game.recalculateGains = 1; //uh oh
 				decay.cpsList.push(Game.unbuffedCps);
@@ -2583,7 +2584,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.updateWidget = function() {
 			let str = '';
 			str = decay.effectStrs();
-			l('decayCpsData').innerHTML = str+(decay.hasExtraPurityCps?'<br><div style="font-size: 16px;">x'+Beautify(decay.extraPurityCps, 4)+'</div>':'');
+			l('decayCpsData').innerHTML = '<span style="'+(decay.broken?'text-shadow: 0 0 9px #f8f8f8ff, 0 0 6px #f8f8f8ff, 0 0 3px #f8f8f8ff;color: #3d0070ff;':'')+'">'+str+'</span>'+(decay.hasExtraPurityCps?'<br><div style="font-size: 16px;">x'+Beautify(decay.extraPurityCps, 4)+'</div>':'');
 			l('decayMomentumData').innerText = 'x'+Beautify(decay.TSMultFromMomentum, 3);
 			l('decayAccelerationData').innerText = 'x'+Beautify(decay.acceleration, 4);
 		}
@@ -2924,10 +2925,10 @@ Game.registerMod("Kaizo Cookies", {
 			var str='<h3>Legacy</h3>';
 			str+='<div class="block" id="legacyPromptData" style="overflow:hidden;position:relative;text-align:center;"></div>';
 			str+='<a class="option" style="position:absolute;right:4px;bottom:4px;" '+Game.clickStr+'="Game.ClosePrompt();Game.GiveUpAscend();" '+Game.getTooltip(
-							'<div style="min-width:200px;text-align:center;">Abandon the current run; you will not ascend, you will lose your current progress, but you will keep anything ascending normally keeps.</div>'
+							'<div style="min-width:200px;text-align:center;">'+loc('Abandon the current run; you will not ascend, you will lose your current progress, but you will keep anything ascending normally keeps.')+'</div>'
 							,'bottom-right')+
-				'>Give up</a>';
-			Game.Prompt(str,[['Ascend','Game.ClosePrompt();if (decay.broken == 1 || Math.floor(Game.HowMuchPrestige(Game.cookiesReset+Game.cookiesEarned))-Math.floor(Game.HowMuchPrestige(Game.cookiesReset)) < 1) { Game.Ascend(1); } else { decay.ascendIn = 75 * Game.fps; Game.Notify(loc("Ascending in..."), "", 0); }'],'br','Cancel'],Game.UpdateLegacyPrompt,'legacyPrompt');
+				'>'+loc('Give up')+'</a>';
+			Game.Prompt(str,[[loc('Ascend'),'Game.ClosePrompt();if (decay.broken == 1 || Math.floor(Game.HowMuchPrestige(Game.cookiesReset+Game.cookiesEarned))-Math.floor(Game.HowMuchPrestige(Game.cookiesReset)) < 1) { Game.Ascend(1); } else { decay.ascendIn = 75 * Game.fps; Game.Notify(loc("Ascending in..."), "", 0); }'],'br',loc('Cancel')],Game.UpdateLegacyPrompt,'legacyPrompt');
 			l('promptOption0').className='option framed large title';
 			l('promptOption0').style='margin:16px;padding:8px 16px;animation:rainbowCycle 5s infinite ease-in-out,pucker 0.2s ease-out;box-shadow:0px 0px 0px 1px #000,0px 0px 1px 2px currentcolor;background:linear-gradient(to bottom,transparent 0%,currentColor 500%);width:auto;text-align:center;';
 			l('promptOption0').style.display='none';
@@ -4867,7 +4868,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (this.y > this.scope.l.height) {
 				this.y = this.scope.l.height;
-				this.yd *= -0.75;
+				this.yd *= -0.1;
 			}
 
 			if (this.grabbed) { 
@@ -5298,9 +5299,9 @@ Game.registerMod("Kaizo Cookies", {
 		decay.utenglobePowerchanneling = false;
 		decay.utenglobePowerchannelEff = 2;
 		decay.utenglobePowerchannelTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+loc('Toggle this on to make releasing souls convert it into <b>%1%</b> of its power instead.', Beautify(decay.utenglobePowerchannelEff * 100, 1))+'</div>'; }
-		decay.utenglobeQuickReleaseTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+loc('Click this to release one phantom essence fixed to your mouse. (Hotkey: Ctrl + Q)')+'</div>'; }
+		decay.utenglobeQuickReleaseTooltip = function() { return '<div style="min-width: 200px; padding: 6px; text-align: center;">'+loc('Click this to release one phantom essence fixed to your mouse. (Hotkey: Shift + Ctrl + Q)')+'</div>'; }
 		AddEvent(document, 'keydown', function(e) {
-			if (decay.quickReleaseUnlocked && e.ctrlKey && e.key.toLowerCase() == 'q') {
+			if (decay.quickReleaseUnlocked && e.ctrlKey && e.shiftKey && e.key.toLowerCase() == 'q') {
 				decay.quickRelease();
 			}
 		});
@@ -5765,9 +5766,10 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		});
 		decay.updateTouchOfForce = function() {
-			if (decay.touchOfForceCooldown) {
+			if (decay.touchOfForceCooldown > 0) {
 				decay.touchOfForceCooldown -= PForPause.timeFactor;
 				if (decay.touchOfForceCooldown <= 0) {
+					decay.touchOfForceCooldown = 0;
 					Game.Lock('Touch of force');
 					Game.Unlock('Touch of force');
 					Game.Notify(loc('Touch of force recharged!'), '', 0);
@@ -5816,7 +5818,7 @@ Game.registerMod("Kaizo Cookies", {
 			} 
 			return 1;
 		}
-		eval('Game.updateBuffs='+Game.updateBuffs.toString().replaceAll('buff.time--;','buff.time -= decay.getBuffLoss(buff.type.name); buff.time++; buff.time--;').replaceAll('buff.time -= PForPause.timeFactor;','buff.time -= decay.getBuffLoss(buff.type.name); buff.time++; buff.time -= PForPause.timeFactor'));
+		eval('Game.updateBuffs='+Game.updateBuffs.toString().replaceAll('buff.time--;','buff.time -= decay.getBuffLoss(buff.type.name); buff.time++; buff.time--;'));
 
 		//have to put this outside otherwise it doesnt work (??????????)
 		decay.cpsPurityMults = function() {
@@ -6428,6 +6430,46 @@ Game.registerMod("Kaizo Cookies", {
 			 .replace('if', 'if (!decay.eligibleForAscend()) { decay.cannotAscendPrompt(); } else if')
 			 .replace('Game.Notify', 'decay.ascendIn = 0; Game.Notify')
 			);
+		decay.legacyButtonL = l('legacyButton');
+		decay.legacyButtonSubTextL = decay.legacyButtonL.querySelector('.subButton');
+		decay.adaptWidth = function(node) {
+			//from main.js because for some reason orteil loves his locally scoped functions
+			var el = node.firstChild;
+			var width = el.clientWidth;
+			if (el.classList.contains('subButton')) {
+				if (width / 95 > 1) el.style.padding = '6px 0px';
+			}
+			width = width / 95;
+			if (width > 1) {
+				el.style.fontSize = (parseInt(window.getComputedStyle(el).fontSize) * 1 / width) + 'px';
+				el.style.transform = 'scale(1,' + (width) + ')';
+			}
+		}
+		decay.updateDecayBreakingEffects = function() {
+			if (!Game.Has('Legacy')) { return; }
+			if (decay.gen > decay.breakingPoint && decay.multList.at(-1) < decay.breakingPoint) {
+				decay.onDecayUnbreak();
+			} else if (decay.gen < decay.breakingPoint && decay.multList.at(-1) > decay.breakingPoint) {
+				decay.onDecayBreak();
+				Game.Notify(loc('Decay broken!'), '', 0, 4);
+			}
+		}
+		let breakingBlockDiv = document.createElement('div');
+		injectCSS('#decayBreakingBlocker { background-color: #ff0044ff; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100000; box-shadow: 0px 0px 20px #ff0044; }');
+		breakingBlockDiv.id = 'decayBreakingBlocker';
+		breakingBlockDiv.style.display = 'none';
+		l('ascendMeterContainer').appendChild(breakingBlockDiv);
+		eval('Game.Logic='+Game.Logic.toString().replace('if (ascendNowToGet>0)', 'if (decay.broken) { if (ascendNowToGet>0) { Game.ascendNumber.style.display=\'block\'; } else { Game.ascendNumber.style.display=\'none\'; } Game.ascendNumber.innerHTML=\'<span style="font-size: 80%; text-decoration: line-through;">+\'+SimpleBeautify(ascendNowToGet)+\'</span>\' + \'<span style="text-shadow:0px -1px 1px rgba(157, 0, 255, 1),0px 1px 1px #f04; margin-left: 5px;">+???</span>\'; } else if (ascendNowToGet>0)'))
+		decay.onDecayUnbreak = function() {
+			decay.legacyButtonSubTextL.innerText = loc('Legacy');
+			decay.adaptWidth(decay.legacyButtonL);	
+			l('decayBreakingBlocker').style.display = 'none';
+		}
+		decay.onDecayBreak = function() {
+			decay.legacyButtonSubTextL.innerText = loc('DECAYED');
+			decay.adaptWidth(decay.legacyButtonL);
+			l('decayBreakingBlocker').style.display = '';
+		}
 
 		//purification: elder pledge & elder covenant
 		this.changePledge = function () {
@@ -6470,7 +6512,7 @@ Game.registerMod("Kaizo Cookies", {
 			replaceAchievDesc('Elder calm', 'Unlock the Elder Covenant.<q>our final gift...<br>use it...<br>well...</q>');
 			replaceAchievDesc('Grandmapocalypse', 'Start the <b>Bingo researches</b> by purchasing the research facility.<q>An apocalypse... for decay!</q>');
 
-			replaceDesc('Elder Pledge', 'Purifies the decay, at least for a short while.<br>Price is equal to 5 minutes of highest raw CpS reached this ascension.<q>Incredible power lies within.</q>');
+			replaceDesc('Elder Pledge', 'Purifies the decay, at least for a short while.<q>Incredible power lies within.</q>');
 			decay.halts['pledge'] = new decay.haltChannel({
 				properName: loc('Elder Pledge'),
 				keep: 10,
@@ -6485,7 +6527,7 @@ Game.registerMod("Kaizo Cookies", {
 				Game.storeToRefresh = 1;
 			}
 			Game.Upgrades['Elder Pledge'].priceFunc = function () {
-				return Game.cookiesPsRawHighest * 300 * (Game.Has('Sacrificial rolling pins') ? 0.1 : 1);
+				return 0;
 			}
 			Game.Upgrades['Elder Pledge'].icon.push('img/icons.png');
 			Game.Upgrades['Elder Pledge'].displayFuncWhenOwned = function () {
@@ -6723,13 +6765,13 @@ Game.registerMod("Kaizo Cookies", {
 			return r;
 		}
 		Game.Upgrades['Shimmering veil [on]'].descFunc = function(){
-			return (this.name=='Shimmering veil [on]'?'<div style="text-align:center;">'+loc("Active.")+'</div><div class="line"></div>':'')+loc('This Shimmering Veil is currently protecting you from <b>%1</b>.',[decay.exhaustion?loc('your exhaustion'):loc('fatigue buildup')]) + '<br>' + loc('Turning it off will also incur some damage to the veil itself.') + '<br>' + loc('Price scales with highest raw CpS reached this ascension.') + '<q>Let fate be in your hands.</q>';
+			return (this.name=='Shimmering veil [on]'?'<div style="text-align:center;">'+loc("Active.")+'</div><div class="line"></div>':'')+loc('This Shimmering Veil is currently protecting you from <b>%1</b>.',[decay.exhaustion?loc('your exhaustion'):loc('fatigue buildup')]) + '<br>' + loc('Turning it off will also incur some damage to the veil itself.') + '<q>Let fate be in your hands.</q>';
 		}
 		Game.Upgrades['Shimmering veil [off]'].descFunc = function(){
-			return (this.name=='Shimmering veil [on]'?'<div style="text-align:center;">'+loc("Active.")+'</div><div class="line"></div>':'')+loc('If activated, this veil will protect you from <b>%1</b>.', [decay.exhaustion?loc('your exhaustion'):loc('fatigue buildup')]) + '<br>' + loc('Price scales with highest raw CpS reached this ascension.') + '<q>Let fate be in your hands.</q>';
+			return (this.name=='Shimmering veil [on]'?'<div style="text-align:center;">'+loc("Active.")+'</div><div class="line"></div>':'')+loc('If activated, this veil will protect you from <b>%1</b>.', [decay.exhaustion?loc('your exhaustion'):loc('fatigue buildup')]) + '<q>Let fate be in your hands.</q>';
 		} 
 		Game.Upgrades['Shimmering veil [off]'].priceFunc = function() {
-			return Game.getVeilCost(Game.veilPreviouslyCollapsed);
+			return 0;
 		}
 		Game.Upgrades['Shimmering veil [off]'].buyFunction = function() {
 			Game.veilPreviouslyCollapsed = false;
@@ -6921,6 +6963,7 @@ Game.registerMod("Kaizo Cookies", {
 			scope: 'background',
 			behaviors: new Crumbs.behaviorInstance(function() {
 				if (!Game.veilOn() || !Game.prefs.fancy || Game.OnAscend) { return; }
+				if (!PForPause.checkAnimTWasAMultipleOf(1)) { return; }
 				//if (Game.T % 2 != 0) { return; }
 
 				decay.veilBackgroundGlintParticle.size = (Math.random() + 0.25) * 50;
@@ -12158,7 +12201,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in Game.eggDrops) { if (!Game.Has(Game.eggDrops[i])) { return false; } } 
 			return true;
 		}
-		new decay.challenge('seasonalCookies', loc('Get <b>all</b> Halloween cookies before acceleration reaches <b>x1.55</b>, or get <b>all</b> common (non-special) Easter eggs before acceleration reaches <b>x1.6</b>.'), function(c) { if (decay.acceleration > 1.6) { c.makeCannotComplete(); } return decay.checkHalloweenDrops() || decay.checkEasterDrops(); }, loc('You unleash <b>+12%</b> more prestige per Halloween or Christmas cookie') + '<br>' + loc('You unleash <b>+5%</b> more prestige per common Easter egg') + '<br>' + loc('You unleash <b>+10%</b> more prestige per rare Easter egg') + '<br>' + loc('Random drop chance <b>+25%</b>'), decay.challengeUnlockModules.box, { prereq: ['earthShatterer', 'powerClickWrinklers'], order: 33.5 });
+		new decay.challenge('seasonalCookies', loc('Get <b>all</b> Halloween cookies before acceleration reaches <b>x1.55</b>, or get <b>all</b> common (non-special) Easter eggs before acceleration reaches <b>x1.6</b>.') + '<br>' + loc('Hint: use the %1 aura!', loc('Mind Over Matter')), function(c) { if (decay.acceleration > 1.6) { c.makeCannotComplete(); } return decay.checkHalloweenDrops() || decay.checkEasterDrops(); }, loc('You unleash <b>+12%</b> more prestige per Halloween or Christmas cookie') + '<br>' + loc('You unleash <b>+5%</b> more prestige per common Easter egg') + '<br>' + loc('You unleash <b>+10%</b> more prestige per rare Easter egg') + '<br>' + loc('Random drop chance <b>+25%</b>'), decay.challengeUnlockModules.box, { prereq: ['earthShatterer', 'powerClickWrinklers'], order: 33.5 });
 		let improvementFunc = function() {
 			if (!decay.challengeStatus('seasonalCookies')) { return this.ddesc; }
 			return '<div style="text-align: center;">' + loc('Improved by challenge <b>%1</b>! <b>+%2%</b> more prestige unleashed!', [decay.challenges['seasonalCookies'].name, 12]) + '</div><div class="line"></div>' + this.ddesc;
@@ -13603,7 +13646,7 @@ Game.registerMod("Kaizo Cookies", {
 			//new decay.scroll('Scroll of glacial stasis', 'Type "freeze" '
 			decay.prestigeEscalationScrollBoostCount = 0;
 			decay.prestigeEscalationScrollBoostMax = 5;
-			new decay.scroll('Scroll of prestige escalation', loc('Type "unleash the potential" to increase the amount of prestige unleashed by <b>30%</b> for up to <b>+150%</b>, lasting until the end of the current run.')+'<q>A nice, eldritch chant to force your prestige points into eternal turmoil.</q>', 2e8, [28, 4, kaizoCookies.images.custImg], [], 626, 954, 'unleash the potential', 6 * 60, function() { 
+			new decay.scroll('Scroll of prestige escalation', loc('Type "unleash the potential" to increase the amount of prestige unleashed by <b>30%</b> for up to <b>+150%</b>, lasting until the end of the current run.')+'<q>A nice, eldritch chant to force your prestige points into eternal turmoil.</q>', 5e7, [28, 4, kaizoCookies.images.custImg], [], 626, 954, 'unleash the potential', 6 * 60, function() { 
 				if (decay.prestigeEscalationScrollBoostCount >= decay.prestigeEscalationScrollBoostMax + Game.Has('Scroll of prestige unbound') * 5) { Game.Notify(loc('Prestige maximally escalated!'), '', 0, 2); return; } 
 				Crumbs.spawn(decay.prestigeEscalationAnimationObject); 
 				Game.Notify(loc('Scroll activated!'), loc('Prestige escalating in progress...'), [28, 4, kaizoCookies.images.custImg]);
@@ -13626,7 +13669,7 @@ Game.registerMod("Kaizo Cookies", {
 					}
 				})
 			};
-			new decay.scroll('Scroll of opportune power', loc('Type \"i need an orb\" to spawn a power orb instantly.')+'<q>More power orbs! What\'s not to love?</q>', 2e8, [28, 5, kaizoCookies.images.custImg], [], 472, 1006, 'i need an orb', 20 * 60, function() { new decay.powerOrb(); }) //comes after prestige escalation scroll
+			new decay.scroll('Scroll of opportune power', loc('Type \"i need an orb\" to spawn a power orb instantly.')+'<q>More power orbs! What\'s not to love?</q>', 5e7, [28, 5, kaizoCookies.images.custImg], [], 472, 1006, 'i need an orb', 20 * 60, function() { new decay.powerOrb(); }) //comes after prestige escalation scroll
 			this.achievements.push(Game.last);
 
 			this.createHeavenlyUpgrade('Phantom clicks', loc('Each big cookie click counts as <b>2</b> clicks for all upgrades that unlock based on click count.')+'<q>Thankfully, the heavens don\'t have counterfeit detection.</q>', 666666, [2, 3, kaizoCookies.images.custImg], ['Stabilizing crystal'], -1048, -558, 253.0035);
@@ -13773,7 +13816,7 @@ Game.registerMod("Kaizo Cookies", {
 			decay.clicksKept = 0; //so that you cant ascend animation cancel spam
 
 			decay.validNumberExps = '0123456789.';
-			new decay.scroll('Scroll of sustained distance', loc('Type "sp1n", "sp2n", or "sp3n" to rotate the next wrinkler clicked clockwise 90, 180, and 270 degrees respectively.'), 1e8, [28, 8, kaizoCookies.images.custImg], ['Scroll of no escape'], 484, 830, 'sp%n', 30, function(event) {
+			new decay.scroll('Scroll of sustained distance', loc('Type "sp1n", "sp2n", or "sp3n" to rotate the next wrinkler clicked clockwise 90, 180, and 270 degrees respectively.'), 2e7, [28, 8, kaizoCookies.images.custImg], ['Scroll of no escape'], 484, 830, 'sp%n', 30, function(event) {
 				//yes, you can input mostly arbitrary numbers, its intentional
 				let dist = parseFloat(event[0].join(''));
 				//console.log(event[0].join('w'), dist);
@@ -14621,7 +14664,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.lumpsTotal > 0) {
 				if (Game.cookiesEarned>=1000000000) { Game.Unlock('Golden sugar'); }
 				if (Game.cookiesEarned>=1000000000000000) { Game.Unlock('Caramelized luxury'); }
-				if (Game.AchievementsOwned>=400) { Game.Unlock('Meaty disgust'); }
+				if (Game.AchievementsOwned>=300) { Game.Unlock('Meaty disgust'); }
 				if (Game.AchievementsOwned>=500) { Game.Unlock('High-fructose sugar lumps'); }
 				if (Game.HasAchiev('Sugar sugar') && Game.cookiesEarned >= Game.Upgrades['Rainy day lumps'].basePrice) { Game.Unlock('Rainy day lumps'); }
 			}
@@ -14870,7 +14913,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.modSaveData['Kaizo Cookies']) { return Game.modSaveData['Kaizo Cookies']; }
 			else { return 'DOINIT'; }
 		}
-        let str = kaizoCookiesVer + '/';
+        let str = kaizoCookies.version + '/';
         for(let i of kaizoCookies.achievements) {
           str+=i.unlocked; //using comma works like that in python but not js
           str+=i.bought; //seperating them otherwise it adds 1+1 and not "1"+"1"
@@ -15057,10 +15100,16 @@ Game.registerMod("Kaizo Cookies", {
 			}
 		}
 		const version = getVer(str[0]);
+		const currentVersion = getVer(kaizoCookies.version);
+		if (currentVersion < version) {
+			Game.Notify(loc("Error importing save"),loc("You are attempting to load a save from a future version (v. %1; you are using v. %2).",[str[0],kaizoCookies.version]),'',6,1);
+			return;
+		}
+		
 		for (let i = 0; i < str[1].length; i += 2) { 
 			//console.log(i, 'unlocked:' + str[1][i], 'bought:' + str[1][i + 1], kaizoCookies.achievements[i / 2].name);
-           	if (isv(str[1][i])) { kaizoCookies.achievements[i / 2].unlocked=parseInt(str[1][i]); }
-           	if (isv(str[1][i + 1])) { kaizoCookies.achievements[i / 2].bought=parseInt(str[1][i + 1]); }
+			if (isv(str[1][i])) { kaizoCookies.achievements[i / 2].unlocked = parseInt(str[1][i]); }
+           	if (isv(str[1][i + 1])) { kaizoCookies.achievements[i / 2].bought = parseInt(str[1][i + 1]); }
 		}
 		let strIn = str[2].split(',');
 		for (let i in strIn) {
@@ -15068,6 +15117,9 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		allValues('load; upgrades and decay basic');
 		if (isv(strIn[20])) { decay.gen = parseFloat(strIn[20]); }
+		if (decay.gen < decay.breakingPoint && Game.Has('Legacy')) {
+			decay.onDecayBreak();
+		}
 		
 		strIn = str[3].split(',');
 		if (isv(strIn[0])) { decay.halt = parseFloat(strIn[0]); }
