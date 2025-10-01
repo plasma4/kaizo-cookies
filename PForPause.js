@@ -214,7 +214,9 @@ Game.registerMod('P for Pause', {
         //kc patched
         const decrementsToPatch = ['Game.updateBuffs', 'Game.doLumps', 'Game.shimmerTypes.golden.updateFunc', 'Game.shimmerTypes.reindeer.updateFunc', 'Game.NotesLogic', 'Game.UpdateTicker', 'Game.UpdateGrandmapocalypse']
         for (let i in decrementsToPatch) {
-            eval(decrementsToPatch[i]+'='+eval(decrementsToPatch[i]).toString().replace('--;', ' -= PForPause.timeFactor;'));
+            let decVar = (eval(decrementsToPatch[i]).toString().match(/((?:\w+\.)*\w+)\s*--;/) || [])[1];
+            eval(decrementsToPatch[i]+'='+eval(decrementsToPatch[i]).toString()
+                .replace('--;', ' -= PForPause.timeFactor; ' + (decVar?(decVar + '++; ' + decVar + '--;'):'')));
         }
         //probably kc patched
         const incrementsToPatch = ['Game.updateShimmers', 'Game.particlesUpdate', 'Game.textParticlesUpdate'];
