@@ -1,3 +1,4 @@
+//See license at end of file
 var decay = {};
 var kaizoCookies = null;
 
@@ -15450,3 +15451,32 @@ Game.registerMod("Kaizo Cookies", {
 		allValues('load completion');
     }
 });
+/*
+Copyright (c) 2025 CursedSliver
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Commons Clause
+
+The Software is provided under the terms of the MIT License with the following additional restriction:
+
+You may not sell the Software, or any derivative works thereof. "Sell" means providing any substantial parts of the Software, any modifications, and/or any additions to the Software, to third parties for a fee or other consideration.
+
+All other rights not expressly restricted by this clause are retained under the MIT License.
+*/
