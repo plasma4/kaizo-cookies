@@ -1,3 +1,4 @@
+//See license at end of file
 var decay = {};
 var kaizoCookies = null;
 
@@ -795,7 +796,8 @@ Game.registerMod("Kaizo Cookies", {
 			scrollCDDisplay: 1,
 			prestigeProgressDisplay: 1,
 			strongTimeSlow: 1,
-			ctrlToToggle: 0
+			ctrlToToggle: 0,
+			quickScrolls: 1
 		}
 		Game.TCount = 0;
 
@@ -1730,6 +1732,8 @@ Game.registerMod("Kaizo Cookies", {
 
 			if (decay.challengeStatus('comboDragonCursor')) { Game.dragonLevel += 5; }
 
+			decay.renderScrollHeader();
+
 			decay.fatigue = 0;
 			decay.exhaustion = 0;
 
@@ -1738,6 +1742,8 @@ Game.registerMod("Kaizo Cookies", {
 			decay.bankedPurification = 0;
 
 			kaizoCookies.lastPause = 0;
+
+			decay.onDecayUnbreak();
 
 			decay.ascendUtenglobe();
 
@@ -2244,6 +2250,7 @@ Game.registerMod("Kaizo Cookies", {
 				str += decay.writePrefButton('LegacyTimer','LegacyTimerButton',loc("Show legacy timer")+' ON',loc("Show legacy timer")+' OFF', 'if (decay.prefs.LegacyTimer) { l(\'Timer2\').style.display = \'\'; } else { l(\'Timer2\').style.display = \'none\'; }')+'<label>('+loc('Shows a more accurate timer of the legacy started stat.')+')</label><br>';
 				str += decay.writePrefButton('prestigeProgressDisplay', 'prestigeProgressDisplayButton',loc('Prestige progress display')+' ON',loc('Prestige progress display')+' OFF', 'if (Game.prestige > 0 && Game.ascensionMode != 1) { if (decay.prefs.prestigeProgressDisplay) { decay.togglePreP(true); } else { decay.togglePreP(false); } }')+'<label>('+loc('Displays current amount of prestige unleashed; only appears after ascending')+')</label><br>';
 				str += decay.writePrefButton('ctrlToToggle', 'ctrlToToggleButton',loc("Time slow toggle mode")+' ON',loc("Time slow toggle mode")+' OFF')+'<label>('+loc('Changes the behavior of the ctrl key on time slowing; if on, ctrl toggles time slow, else time is only slowed while holding it')+')</label><br>';
+				str += decay.writePrefButton('quickScrolls', 'quickScrollsButton', loc('Quick scrolls')+' ON', loc('Quick scrolls')+' OFF', 'if (decay.prefs.quickScrolls) { l(\'scrollHeaderContainer\').style.display = \'\'; } else { l(\'scrollHeaderContainer\').style.display = \'none\'; }')+'<label>('+loc('Allows you to use a panel to activate each scroll without typing in anything.')+')</label><br>';
 				str += '<div class="line"></div>';
 				if (!decay.lockedPreset) {
 					str += decay.writePrefButton('easyPurchases', 'easyPurchasesButton', loc('Convenient purchasing')+' ON', loc('Convenient purchasing')+' OFF')+'<label>('+loc('Assist option; allows you to perform simple actions such as purchasing upgrades, interacting with minigames, and using switches while paused.')+')</label><br>';
@@ -2584,7 +2591,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.updateWidget = function() {
 			let str = '';
 			str = decay.effectStrs();
-			l('decayCpsData').innerHTML = '<span style="'+(decay.broken?'text-shadow: 0 0 9px #f8f8f8ff, 0 0 6px #f8f8f8ff, 0 0 3px #f8f8f8ff;color: #3d0070ff;':'')+'">'+str+'</span>'+(decay.hasExtraPurityCps?'<br><div style="font-size: 16px;">x'+Beautify(decay.extraPurityCps, 4)+'</div>':'');
+			l('decayCpsData').innerHTML = '<span style="'+((decay.broken > 1)?'text-shadow: 0 0 9px #f8f8f8ff, 0 0 6px #f8f8f8ff, 0 0 3px #f8f8f8ff;color: #3d0070ff;':'')+'">'+str+'</span>'+(decay.hasExtraPurityCps?'<br><div style="font-size: 16px;">x'+Beautify(decay.extraPurityCps, 4)+'</div>':'');
 			l('decayMomentumData').innerText = 'x'+Beautify(decay.TSMultFromMomentum, 3);
 			l('decayAccelerationData').innerText = 'x'+Beautify(decay.acceleration, 4);
 		}
@@ -6340,7 +6347,11 @@ Game.registerMod("Kaizo Cookies", {
 		injectCSS(`#game.onMenu #clickHaltDisplayContainer { display: none; }`);
 		injectCSS(`#clickHaltTitle { white-space: nowrap; width: 100%; text-align: center; text-shadow: rgb(111, 109, 109) 0px 1px 4px; font-size: 12px; font-style: bold; color: #bbb; }`);
 		injectCSS(`.clickHaltCell { display: table-cell; text-align: center; display: inline-flex; justify-content: center; align-items: center; width: 25%; z-index: 1; }`);
-		l('buildingsMaster').insertAdjacentElement('beforebegin', clickHaltDisplayContainer);
+		let stickyContainer = document.createElement('div');
+		stickyContainer.id = 'stickyContainer';
+		injectCSS(`#stickyContainer { width: 100%; position: sticky; top: 0; z-index: 1001; }`);
+		stickyContainer.appendChild(clickHaltDisplayContainer);
+		l('buildingsMaster').insertAdjacentElement('beforebegin', stickyContainer);
 		clickHaltDisplayContainer.innerHTML = `
 		<div style="width: 100%; padding-bottom: 12px; padding-top: 8px; vertical-align: middle;" ${Game.getDynamicTooltip('decay.clickHaltDisplayTooltip', 'bottom', true)}>
 			<div id="clickHaltTitle">
@@ -6459,7 +6470,7 @@ Game.registerMod("Kaizo Cookies", {
 		breakingBlockDiv.id = 'decayBreakingBlocker';
 		breakingBlockDiv.style.display = 'none';
 		l('ascendMeterContainer').appendChild(breakingBlockDiv);
-		eval('Game.Logic='+Game.Logic.toString().replace('if (ascendNowToGet>0)', 'if (decay.broken) { if (ascendNowToGet>0) { Game.ascendNumber.style.display=\'block\'; } else { Game.ascendNumber.style.display=\'none\'; } Game.ascendNumber.innerHTML=\'<span style="font-size: 80%; text-decoration: line-through;">+\'+SimpleBeautify(ascendNowToGet)+\'</span>\' + \'<span style="text-shadow:0px -1px 1px rgba(157, 0, 255, 1),0px 1px 1px #f04; margin-left: 5px;">+???</span>\'; } else if (ascendNowToGet>0)'))
+		eval('Game.Logic='+Game.Logic.toString().replace('if (ascendNowToGet>0)', 'if (decay.broken > 1) { if (ascendNowToGet>0) { Game.ascendNumber.style.display=\'block\'; } else { Game.ascendNumber.style.display=\'none\'; } Game.ascendNumber.innerHTML=\'<span style="font-size: 80%; text-decoration: line-through;">+\'+SimpleBeautify(ascendNowToGet)+\'</span>\' + \'<span style="text-shadow:0px -1px 1px rgba(157, 0, 255, 1),0px 1px 1px #f04; margin-left: 5px;">+???</span>\'; } else if (ascendNowToGet>0)'))
 		decay.onDecayUnbreak = function() {
 			decay.legacyButtonSubTextL.innerText = loc('Legacy');
 			decay.adaptWidth(decay.legacyButtonL);	
@@ -7275,6 +7286,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.scrolls = {};
 		decay.scrollsById = [];
 		decay.scrollSlots = [-1, -1, -1, -1];
+		decay.lastScroll = null;
 		decay.scroll = function(name, desc, cost, icon, parents, posX, posY, code, cooldown, onActivation, protected) {
 			let upgrade = kaizoCookies.createHeavenlyUpgrade(name, desc, cost, icon, parents, posX, posY, 1000 + Object.keys(decay.scrolls).length * 0.01);
 			this.name = name;
@@ -7292,6 +7304,8 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			this.upgradeUnlocked = !(this.protected ?? false);
 			this.upgrade.showIf = (function(context) { return function() { return context.upgradeUnlocked; } })(this); 
+			this.codeEvents = {}; //for when code activates without being typed in, like with the funny panel
+			this.codeEvents[''] = []; //default; the key is the information displayed
 
 			if (cooldown) { 
 				upgrade.descFunc = function() {
@@ -7301,12 +7315,13 @@ Game.registerMod("Kaizo Cookies", {
 			}
 
 			this.SWCodeObj = new decay.SWCode(code, 
-				(function(context) { return function(event) { if (context.cooldown) { Game.Notify(loc('On cooldown! (%1 left)', Beautify(context.cooldown / Game.fps)+'s'), '', 0, 2); return; } if (!context.onActivation(event) && context.cooldownToSet) { context.setCooldown(); } } })(this), 
+				(function(context) { return function(event) { if (!decay.gameCan.useScrolls) { return; } if (context.cooldown) { Game.Notify(loc('On cooldown! (%1 left)', Beautify(context.cooldown / Game.fps)+'s'), '', 0, 2); return; } if (!context.onActivation(event) && context.cooldownToSet) { context.setCooldown(); decay.renderScrollHeader(); } } })(this), 
 				{ req: (function(context) { return function() { return Game.Has(context.upgrade.name) && (!context.protected || decay.scrollSlots.includes(context.id)); } })(this) });
 			this.code = this.SWCodeObj.code;
 
 			decay.scrolls[name] = this;
 			this.id = decay.scrollsById.length;
+			decay.lastScroll = this;
 			decay.scrollsById.push(this);
 		}
 		decay.scroll.prototype.setCooldown = function() {
@@ -7354,6 +7369,7 @@ Game.registerMod("Kaizo Cookies", {
 						decay.scrolls[i].removeCooldownDisplay();
 						decay.scrolls[i].cooldown = 0;
 						decay.checkHasScrollOnCooldown();
+						decay.renderScrollHeader();
 					}
 				}
 			}
@@ -7380,6 +7396,7 @@ Game.registerMod("Kaizo Cookies", {
 				}
 			}
 			decay.checkHasScrollOnCooldown();
+			decay.renderScrollHeader();
 		}
 		decay.saveScrollExtras = function() {
 			let str = '';
@@ -7415,7 +7432,7 @@ Game.registerMod("Kaizo Cookies", {
 		</div>
 		<div class="separatorBottom" style="position: absolute; bottom: -8px; z-index: 0;"></div>
 		`; //hiding option in decay.prefs
-		l('buildingsTitle').insertAdjacentElement('beforebegin', scrollCDDiv);
+		l('stickyContainer').insertBefore(scrollCDDiv, l('stickyContainer').firstChild);
 		decay.scrollCDL = l('scrollCDs');
 		decay.scrollCDTooltip = function(id) {
 			return '<div style="width: '+(decay.scrollsById[id].cooldown>(3600 * Game.fps)?'300':'200')+'px; text-align: center;">'+'<div style="font-size: 80%; margin: 0px;">'+decay.scrollsById[id].upgrade.dname+'</div>'+loc('<b>%1</b> left', Game.sayTime(decay.scrollsById[id].cooldown, -1))+'</div>';
@@ -7433,6 +7450,61 @@ Game.registerMod("Kaizo Cookies", {
 		injectCSS(`.CDMeterTitle { display: inline; margin: auto; line-height: 20px; text-shadow: 0px -1px 2px rgb(223, 255, 253, 0.5); }`);
 		injectCSS(`.CDMeter { width: 120px; height: 24px; padding: 1px; border: 2px ridge white; border-radius: 4px; margin: auto; background: rgba(255, 255, 255, 0.1); box-shadow: 0px 0px 3px rgb(223, 255, 253); }`);
 		injectCSS(`.CDMeterFill { background: rgb(232, 249, 255); height: 100%; }`);
+		let scrollHeaderContainer = document.createElement('div');
+		scrollHeaderContainer.id = 'scrollHeaderContainer';
+		scrollHeaderContainer.className = 'scrollHeaderContainer';
+		l('stickyContainer').insertBefore(scrollHeaderContainer, l('stickyContainer').firstChild);
+		l('scrollHeaderContainer').innerHTML = `
+		<div id="scrollHeaderInner"></div>
+		<div class="separatorBottom" style="position:absolute;bottom:-16px;z-index:0;"></div>`;
+
+		decay.getUnlockedScrolls = function() {
+			let arr = [];
+			for (let i in decay.scrolls) {
+				if (decay.scrolls[i].upgrade.bought) { arr.push(decay.scrolls[i]); }
+			}
+			return arr;
+		};
+
+		injectCSS(`
+			#scrollHeaderContainer { min-height: 24px; background:#999; background:url(img/darkNoise.jpg); width: 100%; box-shadow:0px 0px 4px #000 inset; position: relative; text-align: center; margin-bottom: 16px; }
+			#game.onMenu #scrollHeaderContainer { display: none; }
+			#scrollHeaderInner { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 6px; min-height: 32px; }
+			.scrollTinyIcon { width: 48px; height: 48px; transform: scale(0.75); margin: -4px; cursor: pointer; border-radius: 4px; box-shadow: 0px 0px 2px #0002; transition: transform 0.1s; }
+			.scrollTinyIcon:hover { transform: scale(1.1); box-shadow: 0px 0px 2px rgba(2, 34, 31, 1); background: none; }
+			.scrollTinyIcon:active { transform: scale(0.6); box-shadow: 0px 0px 3px rgba(4, 84, 76, 1); background: rgba(255,255,255,0.1); }
+			.codeEventIndicator { position: absolute; bottom: -2px; right: 4px; font: 18px Tahoma, Arial, sans Serif; font-variant: bold; color: #fff; padding: 2px; text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000; }
+		`);
+
+		decay.renderScrollHeader = function() {
+			const scrolls = decay.getUnlockedScrolls();
+			if (!scrolls.length || !decay.prefs.quickScrolls) {
+				l('scrollHeaderContainer').style.display = 'none';
+			} else {
+				l('scrollHeaderContainer').style.display = '';
+			}
+			let str = '';
+			for (let i = 0; i < scrolls.length; i++) {
+				const s = scrolls[i];
+				if (s.cooldown > 0) { continue; }
+				for (let ii in s.codeEvents) {
+					str += '<div class="scrollTinyIcon" ' +
+						Game.getTooltip('<div style="width:240px;text-align:center;"><b>'+s.upgrade.dname+'</b>'+(ii?(': '+ii):'')+'</div>', 'top', true) +
+						' onclick="decay.activateScroll('+s.id+', '+ii+');" style="'+writeIcon(s.upgrade.icon)+'; position: relative;">' +
+						'<span class="codeEventIndicator">'+ii+'</span>' +
+					'</div>';
+				}
+			}
+			l('scrollHeaderInner').innerHTML = str;
+		};
+
+		decay.activateScroll = function(id, event) {
+			const s = decay.scrollsById[id];
+			if (s && s.upgradeUnlocked && !s.cooldown && decay.gameCan.useScrolls) { if (!s.onActivation(s.codeEvents[event])) { s.setCooldown(); decay.renderScrollHeader(); Game.tooltip.hide(); } }
+		};
+
+		Game.registerHook('check', decay.renderScrollHeader);
+		decay.renderScrollHeader();
 		//since scrolls are also upgrades they are declared in the upgrades section
 	
 		decay.helpDesc = [
@@ -9229,14 +9301,14 @@ Game.registerMod("Kaizo Cookies", {
 		replaceDesc('An itchy sweater', loc('Cookie production multiplier <b>+%1%</b>.', 5), true, true);
 		replaceDesc('Increased merriness', loc('Cookie production multiplier <b>+%1%</b>.', 25), true, true);
 		replaceDesc('Improved jolliness', loc('Cookie production multiplier <b>+%1%</b>.', 25), true, true);
-		replaceDesc('Santa\'s dominion', 'Cookie production multiplier <b>+122%</b>.<br>All buildings are <b>1% cheaper</b>.<br>All upgrades are <b>2% cheaper</b>.', true);
+		replaceDesc('Santa\'s dominion', 'Cookie production multiplier <b>+42%</b>.<br>All buildings are <b>1% cheaper</b>.<br>All upgrades are <b>2% cheaper</b>.', true);
 		eval('Game.CalculateGains='+Game.CalculateGains.toString()
 			.replace('mult*=1.15', 'mult*=1.25')
 			.replace('mult*=1.15', 'mult*=1.25')
 			.replace(`if (Game.Has('A lump of coal')) mult*=1.01;`, `if (Game.Has('A lump of coal')) mult*=1.05;`)
 			.replace(`if (Game.Has('An itchy sweater')) mult*=1.01;`, `if (Game.Has('An itchy sweater')) mult*=1.05;`)
 			.replace(`if (Game.Has('Santa\\'s legacy')) mult*=1+(Game.santaLevel+1)*0.03;`, `if (Game.Has('Santa\\'s legacy')) mult*=1+(Game.santaLevel+1)*0.05;`)
-			.replace(`if (Game.Has('Santa\\'s dominion')) mult*=1.2;`, `if (Game.Has('Santa\\'s dominion')) mult*=2.22;`)
+			.replace(`if (Game.Has('Santa\\'s dominion')) mult*=1.2;`, `if (Game.Has('Santa\\'s dominion')) mult*=1.42;`)
 		);
 		replaceDesc('Santa\'s helpers', 'Clicking is <b>50%</b> more powerful, and the six mouse efficiency quadrupling upgrades <b>multiply by 16</b> instead.', true);
 		eval('Game.mouseCps='+Game.mouseCps.toString().replace(`if (Game.Has('Santa\'s helpers')) mult*=1.1;`, `if (Game.Has('Santa\'s helpers')) mult*=1.5;`));
@@ -9671,7 +9743,6 @@ Game.registerMod("Kaizo Cookies", {
 
 		allValues('upgrades rework');
 
-		/*
 		decay.getNews = function() {
 			var newList = [];
 			var name = Game.bakeryName;
@@ -9680,196 +9751,196 @@ Game.registerMod("Kaizo Cookies", {
 			if (!EN) { return []; }
 
 			if (decay.incMult > 0.05) {
-                newList = newList.concat([
+                newList.push(choose([
                     'News: Decay rates spreading linked to global warming, says expert.'
-                ]);
+                ]));
             }
 
 
-			if (Game.Objects['Cursor'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Cursor'].amount>25) { newList.push(choose([
 				'News: Why are the cursors getting so big? What is the meaning of this?'
-			]); }
-			if (Game.Objects['Cursor'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Cursor'].amount>50) { newList.push(choose([
 				'News: what if, instead of having more fingers, we just made them click harder?',
 				'News: cookies and cursors-storing warehouses found to be made of 99.8% fingers and 0.2% cookies, causing massive riots.'
-			]); }
-			if (Game.Objects['Cursor'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Cursor'].amount>100) { newList.push(choose([
 				'News: new "Million fingered" variety Cursors found to be the cause of death for several infants!',
 				'News: finger-cutting jobs open for hire! Starting rate at fingers per hour!'
-			]); }
+			])); }
 
 			var grand = Game.Objects['Grandma'].amount;
-			if (Game.Objects['Grandma'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Grandma'].amount>25) { newList.push(choose([
 				'News: analysis shows a possible type of grandmas opposite to that of normal grandmas, just like antimatter. Experts have coined it "grandpas".',
 				'News: analysis shows that every year, on average, each grandma is getting '+Beautify(1 + Math.pow(grand, 2) * Game.Has('One mind') + Math.pow(grand, 4) * Game.Has('Communal brainsweep') + Math.pow(grand, 7) * Game.Has('Elder Pact'))+'% bigger.'
-			]); }
-			if (Game.Objects['Grandma'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Grandma'].amount>50) { newList.push(choose([
 				'AMBER ALERT: GRANDMA GONE MISSING. REPORT ANY POSSIBLE SIGHTINGS OF GRANDMA "'+choose(Game.grandmaNames).toUpperCase()+'" TO THE LOCAL AUTHORITY.',
 				'SCIENTIFIC BREAKTHROUGH! Our top scientists just discovered that each grandma ages 1 year per year!',
 				'News: the elders are rioting and are destroying a nearby factory!'
-			]); }
-			if (Game.Objects['Grandma'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Grandma'].amount>100) { newList.push(choose([
 				'<i>"No."</i><sig>grandma</sig>',
 				'<i>"It is not our fault."</i><sig>grandma</sig>',
-			]); }
+			])); }
 
-			if (Game.Objects['Farm'].amount>0) newList = newList.concat([
+			if (Game.Objects['Farm'].amount>0) newList.push(choose([
 				'News: local cookie manufacturer grows "Mother of beets"; Farmers outraged by root entanglement strategy.',
 				'News: Maniac spurts about "Pizza": locals confused, it sounds like a giant red cookie.'
-			]);
-			if (Game.Objects['Farm'].amount>25) { newList = newList.concat([
+			]));
+			if (Game.Objects['Farm'].amount>25) { newList.push(choose([
 				'News: a new law has been introduced that limited the stem length of all cookie plants to a maximum of 1 Ãƒâ€šÃ‚Âµm.',
 				'News: local cookie manufacturer have started using the sun to grow cookie plants.'
-			]); }
-			if (Game.Objects['Farm'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Farm'].amount>50) { newList.push(choose([
 				'News: storage out of control! Cookie plants are dying after a recent invasion of cookies that broke through the greenhouse roof; officials blame the warehouse construction company.'
-			]); }
-			if (Game.Objects['Farm'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Farm'].amount>100) { newList.push(choose([
 				'News: experts suggest that cookies from cookie plants are unsafe to eat if not heated to at least 6,000,000 celsius.',
 				'News: farmers report difficulty distinguishing between the cookies on the cookie plants and all the cookies around them.',
 				'News: another farmer dies from suffocation.'
-			]); }
+			])); }
 
-			if (Game.Objects['Mine'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Mine'].amount>25) { newList.push(choose([
 				'News: interdimensional portals within cookie mineshafts have been discovered that leads to "Earth". The mineshaft is now permanently closed.'
-			]); }
-			if (Game.Objects['Mine'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Mine'].amount>50) { newList.push(choose([
 				'News: cookie mineshafts are closing up in order to become storage for the ever-growing pile of cookies.'
-			]); }
-			if (Game.Objects['Mine'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Mine'].amount>100) { newList.push(choose([
 				'News: I\'m not sure what\'s in those underground tunnels, it\'s not like those tunnels are mine.'
-			]); }
+			])); }
 
-			if (Game.Objects['Factory'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Factory'].amount>25) { newList.push(choose([
 				'News: your Factories are now producing as much as cookies as before.',
 				'News: competitor involved in destroying equipment scandal.'
-			]); }
-			if (Game.Objects['Factory'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Factory'].amount>50) { newList.push(choose([
 				'News: Factories going awry after the mechanical failure of the cookie output, factory now filled with cookies & possibly will become a cookie volcano in the next hour!'
-			]); }
-			if (Game.Objects['Factory'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Factory'].amount>100) { newList.push(choose([
 				'News: new legislation suggests that all cookie-producing Factories be repurposed to '+(Game.Objects['Factory'].amount>250?'planet':'warehouse')+'-producing factories.'
-			]); }
+			])); }
 
-			if (Game.Objects['Bank'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Bank'].amount>25) { newList.push(choose([
 				'News: economists worldwide predict imminent economic collapse, saying that "if cookie prices ever drop below 1e-'+Math.floor(Math.max(Game.log10Cookies - 2, 0))+'..."'
-			]); }
-			if (Game.Objects['Bank'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Bank'].amount>50) { newList.push(choose([
 				'News: it currently costs 10 cookies to store 3 cookies. Because of this, your banks are closing up.',
 				'News: man invades bank, finds gold. We still have hope.'
-			]); }
-			if (Game.Objects['Bank'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Bank'].amount>100) { newList.push(choose([
 				'News: IN THIS ECONOMY??',
 				'News: stock prices reach record highs after the destruction of the Great Space Cookie Patch! Traders hail in delight!'
-			]); }
+			])); }
 
-			if (Game.Objects['Temple'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Temple'].amount>25) { newList.push(choose([
 				'News: are cookies real for gods? We sure hope not.',
 				'News: local temple swamped after recent cookie containment breach! Airstrikes currently being called in.'
-			]); }
-			if (Game.Objects['Temple'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Temple'].amount>50) { newList.push(choose([
 				'News: if cookies are not real for gods, then who are we praying to?'
-			]); }
-			if (Game.Objects['Temple'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Temple'].amount>100) { newList.push(choose([
 				'News: construction company founded to be "insane" after the construction of the 5899th statue of a wrinkled isosceles triangle!'
-			]); }
+			])); }
 
-			if (Game.Objects['Wizard tower'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Wizard tower'].amount>25) { newList.push(choose([
 				'News: thermodynamics-adhering houses found to be the cause of the recent decay decrease!'
-			]); }
-			if (Game.Objects['Wizard tower'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Wizard tower'].amount>50) { newList.push(choose([
 				'News: spell "stretch time" forbidden after recent causality-breaking event!',
 				'News: do you like magic? If yes, we advise that you turn yourself in immediately.'
-			]); }
-			if (Game.Objects['Wizard tower'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Wizard tower'].amount>100) { newList.push(choose([
 				'News: seems like we are out of magic. Experts advise removing wizard towers, but we suspect ulterior motivations.'
-			]); }
+			])); }
 
-			if (Game.Objects['Shipment'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Shipment'].amount>25) { newList.push(choose([
 				'News: spaceship implodes, evidence suggest that cookies are at fault! Investigation is currently being terminated and amnesticized.'
-			]); }
-			if (Game.Objects['Shipment'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Shipment'].amount>50) { newList.push(choose([
 				'News: your shipment #'+Math.floor(Math.random() * 1234565+2)+' has just discovered yet another star burning on cookie fusion!'
-			]); }
-			if (Game.Objects['Shipment'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Shipment'].amount>100) { newList.push(choose([
 				'News: the cookie transportation company is working hard to bring your cookies as far away as possible.'
-			]); }
+			])); }
 
-			if (Game.Objects['Alchemy lab'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Alchemy lab'].amount>25) { newList.push(choose([
 				'News: cookie-friendly metal such as Einsteinium and Technetium found to be 100% more efficient at cookie-metal conversion!'
-			]); }
-			if (Game.Objects['Alchemy lab'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Alchemy lab'].amount>50) { newList.push(choose([
 				'News: alchemy lab awarded the Nobel Peace Prize after being found to convert cookies back into gold!'
-			]); }
-			if (Game.Objects['Alchemy lab'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Alchemy lab'].amount>100) { newList.push(choose([
 				'News: price of gold drops by 90% after the cookie-inflation catastrophe!'
-			]); }
+			])); }
 
-			if (Game.Objects['Portal'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Portal'].amount>25) { newList.push(choose([
 				'News: today we bring you an Elderspeak podcast about cookie pollution.'
-			]); }
-			if (Game.Objects['Portal'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Portal'].amount>50) { newList.push(choose([
 				'News: your portals are brimming with ungodly energy far better than anything your cookies could smell like!',
 				'News: experts debate about sending cookies through portals, concludes that "the cookies will just return stronger than before."'
-			]); }
-			if (Game.Objects['Portal'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Portal'].amount>100) { newList.push(choose([
 				'News: closing portals require matter, but why should that matter?'
-			]); }
+			])); }
 
-			if (Game.Objects['Time machine'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Time machine'].amount>25) { newList.push(choose([
 				'News: is it possible to send cookies to the future? Experts debate about the potential risks carried by time-centralized cookie storage.'
-			]); }
-			if (Game.Objects['Time machine'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Time machine'].amount>50) { newList.push(choose([
 				'News: cookies from the past "20% more edible and 50% less prone to spontaneous rebellion", claims world-renowned cookie manufacturer.'
-			]); }
-			if (Game.Objects['Time machine'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Time machine'].amount>100) { newList.push(choose([
 				'News: statistical analysis of cookies shows that "cookies sent to the future tend to be 1% less powerful"!'
-			]); }
+			])); }
 
-			if (Game.Objects['Antimatter condenser'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Antimatter condenser'].amount>25) { newList.push(choose([
 				'News: As it turns out, there is 1e200,405,192,204 times more antimatter than matter. Expert found cause to be "dimensions", whatever that means.',
 				'News: Experts advise against turning antimatter to cookies, reason being "there is already way too much cookies, and antimatter can help clear out some cookies"'
-			]); }
-			if (Game.Objects['Antimatter condenser'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Antimatter condenser'].amount>50) { newList.push(choose([
 				'News: if there is so much cookies, why are there so few anticookies?'
-			]); }
-			if (Game.Objects['Antimatter condenser'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Antimatter condenser'].amount>100) { newList.push(choose([
 				'[news destroyed by antimatter]',
 				'?secnetnesitna eht era erehw ,secnetnes hcum os si ereht fi :sewN'
-			]); }
+			])); }
 
-			if (Game.Objects['Prism'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Prism'].amount>25) { newList.push(choose([
 				'News: Prisms are starting to exclusively use gamma rays to produce the smallest cookies possible.'
-			]); }
-			if (Game.Objects['Prism'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Prism'].amount>50) { newList.push(choose([
 				'News: Prisms encounter issues outputting light, found cause to be cookies blocking the window! Officials will drop the next nuke tomorrow at 5:30, hopefully that\'ll clear it up a bit more.'
-			]); }
-			if (Game.Objects['Prism'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Prism'].amount>100) { newList.push(choose([
 				'News: new evidence suggesting the origins of the universe turns out to be false, muddled by the complete lack of light which had all been converted to cookies!'
-			]); }
+			])); }
 
-			if (Game.Objects['Chancemaker'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Chancemaker'].amount>25) { newList.push(choose([
 				'News: it is considered lucky if the Chancemakers don\'t produce any cookies.'
-			]); }
-			if (Game.Objects['Chancemaker'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Chancemaker'].amount>50) { newList.push(choose([
 				'News: experts are considering the "quantom dislocation" optimization, wonders if the Chancemakers are powerful enough to dislocate a mass of cookies of 1,123,901,284 light years cubed.'
-			]); }
-			if (Game.Objects['Chancemaker'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Chancemaker'].amount>100) { newList.push(choose([
 				'News: you will see this news because RNG said yes.',
 				'News: are the decorative eyeballs really necessary? Experts consider removing one eyeball from each Chancemaker to save space to store more cookies.'
-			]); }
+			])); }
 
-			if (Game.Objects['Fractal engine'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Fractal engine'].amount>25) { newList.push(choose([
 				'News: Fractal engines are now forbidden to replicate into an exact copy of itself. '
-			]); }
-			if (Game.Objects['Fractal engine'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Fractal engine'].amount>50) { newList.push(choose([
 				'News: Fractal engines are now forbidden to replicate into an exact copy of itself. News: Fractal engines are now forbidden to replicate into an exact copy of itself. ',
 				'News: Fractal engines are encountering difficulty replicating. Experts are working hard to figure out where they are amongst the mass of cookies.'
-			]); }
-			if (Game.Objects['Fractal engine'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Fractal engine'].amount>100) { newList.push(choose([
 				'News: Fractal engines are now forbidden to replicate into an exact copy of itself. News: Fractal engines are now forbidden to replicate into an exact copy of itself. News: Fractal engines are now forbidden to replicate into an exact copy of itself. News: Fractal engines are now forbidden to replicate into an exact copy of itself. Wait, we also can\'t?',
 				'News: No, Fractal engines can\'t replicate into a larger copy of itself, either.'
-			]); }
+			])); }
 
 			var characters = ['q','w','e','r','t','y','u','i','o','p','a','s','d','f','g','h','j','k','l','z','x','c','v','b','n','m','1','2','3','4','5','6','7','8','9','0','Q','W','E','R','T','Y','U','I','O','P','A','S','D','F','G','H','J','K','L','Z','X','C','V','B','N','M'];
 			var r = function(num) {
@@ -9880,61 +9951,61 @@ Game.registerMod("Kaizo Cookies", {
 				return str;
 			}
 
-			if (Game.Objects['Javascript console'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Javascript console'].amount>25) { newList.push(choose([
 				'News: if (me.when == "change code") { console.log(NaN); }',
 				'News: programmers complain that they "can\'t see a thing" after using the new "all-natural sunlight" displays.'
-			]); }
-			if (Game.Objects['Javascript console'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Javascript console'].amount>50) { newList.push(choose([
 				'News: this code is too unsightreadable.',
 				'undefined',
 				'News: '+r(Math.floor(Math.random() * 70) + 1)
-			]); }
-			if (Game.Objects['Javascript console'].amount>100 && Game.Objects['Time machine'].amount > 0) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Javascript console'].amount>100 && Game.Objects['Time machine'].amount > 0) { newList.push(choose([
 				'News: price of LED skyrockets with the introduction of 1e18 x 1.8e18 wide screens.',
 				'News: is it really necessary to write code with indent size 8?',
 				'News: the source of the Great Cookie Space Patch has been attributed to the overuse of Javascript Consoles that take up too much space.'
-			]); }
+			])); }
 
-			if (Game.Objects['Idleverse'].amount>25) { newList = newList.concat([
+			if (Game.Objects['Idleverse'].amount>25) { newList.push(choose([
 				'News: experts question the appropriateness of the name "Idleverse", suggesting that they should be renamed to "Activeverse".'
-			]); }
-			if (Game.Objects['Idleverse'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Idleverse'].amount>50) { newList.push(choose([
 				'News: Idleverses are being employed as bowling bulbs in recreational facilities. "Where else would you put them?" rhetorically-questions officials.'
-			]); }
-			if (Game.Objects['Idleverse'].amount>100 && Game.Objects['Time machine'].amount > 0) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Idleverse'].amount>100 && Game.Objects['Time machine'].amount > 0) { newList.push(choose([
 				'News: experts suggest removing at least '+Math.floor(Game.Objects['Idleverse'].amount / 2)+' Idleverses after a catastrophic Idleverse Chained XK-Collapse scenario. '+name+', being the great baker, simply reverses time. "This will only happen again," warn experts from across universes.',
 				'News: are Idleverses even worth keeping? Or should we remove some, so we can have more space to store cookies?',
 				'News: scientists within Idleverses predict a Big Crunch to their universes. '
-			]); }
+			])); }
 
-		    if (Game.Objects['Cortex baker'].amount>0) { newList = newList.concat([
+		    if (Game.Objects['Cortex baker'].amount>0) { newList.push(choose([
 				'News: Cortex baker implodes, unknown plant puzzles blamed.',
 				'News: it was discovered that thoughts can have thoughts and conclude "that is a tought thing to think"'
-			]); }
-			if (Game.Objects['Cortex baker'].amount>25) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Cortex baker'].amount>25) { newList.push(choose([
 				'News: You have a big brain.'
-			]); }
-			if (Game.Objects['Cortex baker'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['Cortex baker'].amount>50) { newList.push(choose([
 				'News: "Cortex baker galaxy" can be seen during astronomical twilight.',
 				'News: ordinary people found to have seizures after being in the presence of Cortex bakers for more than 1.5 microseconds. Due to space being clogged with wrinkly cookies, officials have no choice but to let them remain near people.'
-			]); }
+			])); }
 
-			if (Game.Objects['Cortex baker'].amount>100) { newList = newList.concat([
+			if (Game.Objects['Cortex baker'].amount>100) { newList.push(choose([
 				'News: "The mass" Cortex baker cluster 3d9cjk reaches a record high of 1,204,589 congealed Cortex bakers! Experts suggest separating each Cortex Baker by at least 1 more kilometer; officials won\'t budge.',
 				'News: Cortex bakers question the morality of thinking cookies into other Cortex bakers; advised to "keep working" even if there is nowhere else to put the cookies.'
-			]); }
+			])); }
 
-			if (Game.Objects['You'].amount>25) { newList = newList.concat([
+			if (Game.Objects['You'].amount>25) { newList.push(choose([
 				'News: local baker "'+name+'" and clones found to be the cause of at least 52,603 human rights violations; 99% of which are due to poor ventilation and overcrowding.',
 				'News: '+name+'\'s clones are found to be harmful to philosophy.'
-			]); }
-			if (Game.Objects['You'].amount>50) { newList = newList.concat([
+			])); }
+			if (Game.Objects['You'].amount>50) { newList.push(choose([
 				'News: Who am I? Where did I come from? Where will I go?',
 				'News: man founded to be "insane" after claiming that he likes cookies! We hope that this man gets at least a death sentence.'
-			]); }
-			if (Game.Objects['You'].amount>100) { newList = newList.concat([
+			])); }
+			if (Game.Objects['You'].amount>100) { newList.push(choose([
 				'News: '+name+'\'s clones are beginning to shrink. Experts expect nuclear fusion to occur in the next 4 hours.'
-			]); }
+			])); }
 
 			if (Game.Objects['Wizard tower'].level>10) newList.push(choose([
 				'News: local baker levels wizard towers past level 10, disowned by family.'
@@ -9945,7 +10016,7 @@ Game.registerMod("Kaizo Cookies", {
 
 			var buildNewList = [];
 
-			if (Math.random() < 0.4) { buildNewList = buildNewList.concat(newList); }
+			if (Math.random() < 0.6) { buildNewList = buildNewList.concat(newList); }
 
 			newList = [];
 			var specials = [
@@ -9978,7 +10049,7 @@ Game.registerMod("Kaizo Cookies", {
 
 			if (Math.random()<0.001)
             {
-                newList.push('<q>'+"JS is the best coding language."+'</q><sig>'+"no one"+'</sig>');
+                newList.push('<q>'+"JS is the best programming language."+'</q><sig>'+"no one"+'</sig>');
 				newList.push('News: aleph reference REAL!');
 				newList.push('News: "Say NO to ecm!" said protester.');
 				newList.push('News: person called "rice" fails to execute a "combo", whatever that is.');
@@ -10017,6 +10088,7 @@ Game.registerMod("Kaizo Cookies", {
 				newList.push('The becoming of a grandmaster garden puzzler is a treacherous journey. First, one must prove themselves by completing many puzzles in the document leading up to the Grandmaster section. Then, they must take a test - consisting of 3 sections, which requires advanced speed solving, grandmaster solving, and puzzle creation, respectively. In the advanced speed solving section, one must solve all kinds of varieties of puzzles in as little as 30 minutes, from supermassives, to exploding portals, to proofs, and any combination thereof. In the grandmaster solve section, one must solve two very difficult puzzles in 2 hours - typically unknown plants, which is the undisputably most difficult variety by far, requiring one to find identities instead of solutions. Lastly, one must create 3 puzzles according to a theme, then be scored by the existing grandmasters. Only then will they realize the true meaning behind being a grandmaster.');
 				newList.push('Hi Lookas, I\'m Lookas! Nice to meet my alt today!');
 				newList.push('News: renowned orange cat, goober, is a good boy, with anyone else saying otherwise to be lying, new research finds.');
+				newList.push('This news ticker is dedicated to Fififoop.');
             }
 			newList = newList.concat(buildNewList);
 			return newList;
@@ -10061,7 +10133,6 @@ Game.registerMod("Kaizo Cookies", {
 		eval('Game.getNewTicker='+Game.getNewTicker.toString().replace(/News :/g, "News:").replace("Neeeeews :", "Neeeeews:").replace("Nws :", "Nws:").replace('Game.TickerEffect=0;', 'var ov = Game.overrideNews(); if (ov.length) { list = choose(ov); } Game.TickerEffect=0;').replace('Game.Ticker=choose(list);', 'Game.Ticker=choose(list); Game.lastTicker = Game.Ticker;'));
 
 		allValues('news');
-		*/
 
 		/*=====================================================================================
         Power clicks
@@ -12347,7 +12418,8 @@ Game.registerMod("Kaizo Cookies", {
 			condenseSouls: true, //good
 			toggleAutoClaim: true, //good
 			togglePowerchannel: true, //good
-			grabInteractables: true //good
+			grabInteractables: true, //good
+			useScrolls: true
 		}
 		decay.copyGameCan = function() { 
 			for (let i in decay.gameCan) {
@@ -13831,6 +13903,11 @@ Game.registerMod("Kaizo Cookies", {
 				decay.wrinklerRotateValue += dist;
 				//Crumbs.spawn(decay.wrinklerRotaterTemplate, { amount: dist });
 			});
+			decay.lastScroll.codeEvents = {
+				1: [['1']],
+				2: [['2']],
+				3: [['3']]
+			}
 			this.achievements.push(Game.last);
 			decay.wrinklerRotateValue = 0;
 			decay.wrinklerRotaterTemplate = {
@@ -15374,3 +15451,32 @@ Game.registerMod("Kaizo Cookies", {
 		allValues('load completion');
     }
 });
+/*
+Copyright (c) 2025 CursedSliver
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+Commons Clause
+
+The Software is provided under the terms of the MIT License with the following additional restriction:
+
+You may not sell the Software, or any derivative works thereof. "Sell" means providing any substantial parts of the Software, any modifications, and/or any additions to the Software, to third parties for a fee or other consideration, without express written permission from the copyright holder.
+
+All other rights not expressly restricted by this clause are retained under the MIT License.
+*/
