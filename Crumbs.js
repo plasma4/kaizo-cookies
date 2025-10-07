@@ -1,3 +1,26 @@
+/*
+MIT License
+
+Copyright (c) 2025 CursedSliver
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 if (typeof Crumbs !== 'object') { var Crumbs = {}; }
 
 var CrumbsEngineLoaded = false;
@@ -289,6 +312,9 @@ const Crumbs_Init_On_Load = function() {
 		this.mouseX = 0;
 		this.mouseY = 0;
 
+		this.left = 0;
+		this.top = 0;
+
 		Crumbs.scopedCanvas[key] = this;
 		Crumbs.objects[key] = [];
 		this.objects = Crumbs.objects[key];
@@ -298,13 +324,17 @@ const Crumbs_Init_On_Load = function() {
 		Crumbs.validScopes.push(key);
 		Crumbs.prefs.objects[key] = 1;
 		Crumbs.prefs.particles[key] = 1;
+
+		this.setSelf();
 	}
 	Crumbs.canvas.prototype.setSelf = function() {
 		this.l.width = this.l.parentNode.offsetWidth;
 		this.l.height = this.l.parentNode.offsetHeight;
 		this.boundingClientRect = this.l.getBoundingClientRect();
-		this.mouseX = Game.mouseX - this.boundingClientRect.left;
-		this.mouseY = Game.mouseY - this.boundingClientRect.top + (App?0:32);
+		this.left = this.boundingClientRect.left;
+		this.top = this.boundingClientRect.top - (App?0:32);
+		this.mouseX = Game.mouseX - this.left;
+		this.mouseY = Game.mouseY - this.top;
 	}
 	Crumbs.canvas.prototype.getShader = function(type) {
 		for (let i of this.shaders) {
