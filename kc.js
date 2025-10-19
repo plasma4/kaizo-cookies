@@ -5392,9 +5392,9 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		decay.getCurrentWrinklerSize = function(rand) {
 			let size = randomFloor(Math.pow(Math.max(Game.log10CookiesSimulated * (1 + Math.random() * 0.5) - 8 /*+ Math.pow(Math.max(Game.log10CookiesSimulated - 23, 0) * 0.5, 0.25) */, 1), 0.5));
-			if (rand > 98 && Game.log10CookiesSimulated > 36) { size += 2; }
-			if (rand > 95 && Game.log10CookiesSimulated > 33) { size++; }
-			if (rand > 90 && Game.log10CookiesSimulated > 30) { size++; }
+			//if (rand > 98 && Game.log10CookiesSimulated > 36) { size += 2; }
+			//if (rand > 95 && Game.log10CookiesSimulated > 33) { size++; }
+			//if (rand > 90 && Game.log10CookiesSimulated > 30) { size++; }
 			if (rand > 60) { size++; } 
 			if (rand > 25 && Game.log10CookiesSimulated > 24) { size++; }
 			//if (size > 1 && Game.Has('Elder spice') && Math.random() < 0.07) { size--; } 
