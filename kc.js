@@ -5358,7 +5358,7 @@ Game.registerMod("Kaizo Cookies", {
 		decay.updateWrinklers = function() {
 			const d = Game.hasBuff('Distorted');
 			//const p = (1 - Math.pow(1 - decay.wrinklerSpawnRate, (d?3.5:1))) / (Math.pow(decay.wrinklersN, (d?0.1:0.5)) + 1);
-			const p = (1 - Math.pow(1 - decay.wrinklerSpawnRate, (d?2:1))) / Math.max(Math.pow(decay.wrinklersN, (d?0.1:0.5)) + 1, 2);
+			const p = (1 - Math.pow(1 - decay.wrinklerSpawnRate, (d?1.2:0.4))) / Math.max(Math.pow(decay.wrinklersN, (d?0.1:0.5)) + 1, 2);
 			//const a = 1 / Math.pow(-(decay.times.sinceWrinklerSpawn / Game.fps) * Math.log10(decay.gen) + 1, 0.5);
 			const a = 1 / Math.max(decay.gen, 1); //wrinkler throttling mostly removed
 			//const b = (decay.gen >= 1)?(1 / Math.pow((decay.times.sinceWrinklerSpawn / Game.fps) + 1, 0.25)):1;
