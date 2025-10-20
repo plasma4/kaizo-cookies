@@ -3936,9 +3936,9 @@ Game.registerMod("Kaizo Cookies", {
 					attachments = JSON.parse(JSON.stringify(attachments));
 				} 
 		 	}
-			if (decay.toTriggerOnSpawn && flag.onSpawn && flag.onSpawn.call(wrinkler, attachments)) { return; }
-			if (flag.init && flag.init.call(wrinkler, attachments)) { return; }
 			wrinkler.flags.set(flag, attachments ?? null);
+			if (decay.toTriggerOnSpawn && flag.onSpawn && flag.onSpawn.call(wrinkler, attachments)) { wrinkler.flags.delete(flag); return; }
+			if (flag.init && flag.init.call(wrinkler, attachments)) { wrinkler.flags.delete(flag); return; }
 			
 			return true;
 		}
