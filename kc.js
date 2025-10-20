@@ -8844,7 +8844,7 @@ Game.registerMod("Kaizo Cookies", {
 				keep: 0,
 				factor: 0.9
 			});
-			M.plants['queenbeetLump'].onHarvest = function() {
+			M.plants['queenbeetLump'].onHarvest = function(x, y, age) {
 				if (age < this.mature) { return; }
 				decay.stop(6, 'jqb');
 				decay.purifyAll(1, 1, 1);
