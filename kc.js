@@ -2812,7 +2812,12 @@ Game.registerMod("Kaizo Cookies", {
 
 			const log10Max = Math.log10(Game.cookiesEarned + Game.cookiesReset);
 			const powFactor = 0.5 + (decay.challengeStatus('combo1')?0.15:0) + 0.01 * log10Max;
-			Game.log10CookiesSimulated = Math.max(Game.log10Cookies, Math.min(Math.max(Game.TCount - 60 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps, 0) / (100 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps), 1) * (log10Max - log10Max / 6));
+			Game.log10CookiesSimulated = Math.max(Game.log10Cookies, 
+				Math.min(
+					Math.max(Game.TCount - 60 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps, 0) / (400 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps), 1
+				)
+				 * (log10Max - log10Max / 6)
+			);
 			if (Game.log10CookiesSimulated > Game.log10Cookies) { 
 				decay.triggerNotif('difficultyRamping');
 				if (!Game.hasTriggeredDifficultyRampingNotif) { 
@@ -5237,6 +5242,7 @@ Game.registerMod("Kaizo Cookies", {
 		Crumbs.wrinklerBit.anchor = 'top';
 		Crumbs.wrinklerBit.order = 9;
 		decay.spawnWrinklerbits = function(obj, amount, speed, expireAfterMult, func, param1, param2) {
+			if (obj.is('winkler')) { return; }
 			const seed = Math.floor(Math.random() * 8) + Crumbs.objects.left.length;
 			for (let i = 0; i < amount; i++) { 
 				const [modXD, modYD] = func?func(speed, param1, param2):[0, 0];
@@ -5395,19 +5401,20 @@ Game.registerMod("Kaizo Cookies", {
 			//if (rand > 98 && Game.log10CookiesSimulated > 36) { size += 2; }
 			//if (rand > 95 && Game.log10CookiesSimulated > 33) { size++; }
 			//if (rand > 90 && Game.log10CookiesSimulated > 30) { size++; }
-			if (rand > 60) { size++; } 
-			if (rand > 25 && Game.log10CookiesSimulated > 24) { size++; }
+			if (Math.random() < 0.6) { size++; }
+			if (Math.random() < 0.25 && Game.log10CookiesSimulated > 24) { size++; }
 			//if (size > 1 && Game.Has('Elder spice') && Math.random() < 0.07) { size--; } 
-			if (Math.random() < 0.025) { size += 3; }
-			if (Math.random() < 0.025) { size += 3; }
+			if (Math.random() < 4) { size += 4; }
+			if (Math.random() < 0.4) { size += 3; }
 			return size;
 		}
 		decay.spawnWrinklerLead = function() {
 			if (!decay.unlocked || decay.wrinklersN >= 72) { return; }
 			let obj = {};
-			obj.size = decay.getCurrentWrinklerSize(Math.random() * 100);
+			const difficulty = Math.random();
+			obj.size = decay.getCurrentWrinklerSize(difficulty * 100);
 			obj.rad = Math.random() * Math.PI * 2;
-			obj.speedMult = Math.min(Math.pow(Math.random() * (0.8 + Game.log10CookiesSimulated * 0.01) + 0.6, Math.pow(1 + Math.random() * Math.max(Game.log10CookiesSimulated - 30, 0) * 0.2, 0.5)), 2.5);
+			obj.speedMult = Math.min(Math.pow(Math.random() * (0.4 + 1 - difficulty + Game.log10CookiesSimulated * 0.01) + 0.6, Math.pow(1 + Math.random() * Math.max(Game.log10CookiesSimulated - 30, 0) * 0.2, 0.5)), 2.5);
 			if (Math.random() < 0.1) { obj.speedMult = Math.pow(obj.speedMult, 1.5); }
 			if (Math.random() < 0.05) { obj.speedMult = Math.pow(obj.speedMult, 1.5); }
 			obj.damageMult = (Math.random() * 0.6 + 0.7) * Math.min(Math.pow(obj.speedMult, 1.5), 1);
@@ -13102,7 +13109,7 @@ Game.registerMod("Kaizo Cookies", {
 
 		new decay.challenge('allBuffStack', loc('Get <b>%1</b> of any buffs active simultaneously.', Beautify(12)), function() { return (Object.keys(Game.buffs).length >= 12); }, loc('Dragon Orbs can ignore up to <b>1</b> buff when attempting to spawn a Golden cookie.'), decay.challengeUnlockModules.never, { deprecated: true, prereq: ['buffStack', 'combo5'] });
 
-		new decay.challenge('allBuffStackR', function(c) { return loc('Get <b>%1</b> of any buffs active simultaneously.', Beautify(15 + c * 3))+(c?'<br>'+loc('Completions: ')+'<b>'+Beautify(c)+'</b>':''); }, function(c) { return (Object.keys(Game.buffs).length >= (15 + c.complete * 3)); }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.05') + '<br>' + loc('Click frenzy from Force the Hand of Fate chance <b>+%1%</b>', 2), decay.challengeUnlockModules.truck, { order: 1002, repeatable: true, prereq: 'dualcast' });
+		new decay.challenge('allBuffStackR', function(c) { return loc('Get <b>%1</b> of any buffs active simultaneously.', Beautify(15 + c * 3))+(c?'<br>'+loc('Completions: ')+'<b>'+Beautify(c)+'</b>':''); }, function(c) { return (Object.keys(Game.buffs).length >= (15 + c.complete * 3)); }, loc('CpS multiplier <b>x%1</b> for each <b>x2</b> CpS multiplier from your purity', '1.05') + '<br>' + loc('Click frenzy from Force the Hand of Fate chance <b>+%1%</b>', 2), decay.challengeUnlockModules.truck, { order: 1002, repeatable: true, deprecated: true, prereq: 'dualcast' });
  //dont actually give a solution because if you dont then people will come to the community to ask questions which boost the community, this is just me being nice, hypothetically I could pull a terraria and leave the player there
 		new decay.challenge('dualcast', loc('Chance of Click Frenzy from Force the Hand of Fate is massively increased and magic regeneration is faster. Gambler\'s Fever dream cannot be used. You cannot refill minigames with sugar lumps.')+'<br>'+loc('Get another Click frenzy while a Click frenzy is ongoing.') + '<br><div class="framed" style="width: 50px; text-align: center;" '+Game.clickStr+'="Game.Notify(loc(\'Get hint\'), loc(\'By selling wizard towers at the right moment, you can cast Force the Hand of Fate twice in a row.\'), [22, 11])">' + loc('Get hint') + '</div>', function() { return (Game.hasBuff('Click frenzy') && Game.hasBuff('Click frenzy').time >= 30 * Game.fps); }, loc('Valentine\'s cookies are between <b>2x</b> and <b>5x</b> stronger') + '<br>' + loc('Each exhaustion lasts <b>15%</b> shorter') + '<br>' + loc('While having no purity and is not coagulated, decay rates <b>-25%</b>.'), decay.challengeUnlockModules.truck, { prereq: ['earthShatterer', 'powerClickWrinklers'], conditional: true, init: function() { decay.gameCan.refillMinigames = false; }, reset: function() { decay.gameCan.refillMinigames = true; } });
 		eval('Game.shimmerTypes.golden.popFunc='+Game.shimmerTypes.golden.popFunc.toString().replace(`buff=Game.gainBuff('click frenzy',Math.ceil(13*effectDurMod),777*(1+(Game.auraMult('Dragon Cursor')*0.5)));`, 'if (decay.isConditional("dualcast") && Game.hasBuff("Click frenzy")) { decay.challenges["dualcast"].finish(); }' + `buff=Game.gainBuff('click frenzy',Math.ceil(13*effectDurMod),777*(1+(Game.auraMult('Dragon Cursor')*0.5)));`))
