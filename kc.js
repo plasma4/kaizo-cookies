@@ -5404,8 +5404,8 @@ Game.registerMod("Kaizo Cookies", {
 			if (Math.random() < 0.6) { size++; }
 			if (Math.random() < 0.25 && Game.log10CookiesSimulated > 24) { size++; }
 			//if (size > 1 && Game.Has('Elder spice') && Math.random() < 0.07) { size--; } 
-			if (Math.random() < 4) { size += 4; }
-			if (Math.random() < 0.4) { size += 3; }
+			if (rand < 4) { size += 4; }
+			if (rand < 0.4) { size += 3; }
 			return size;
 		}
 		decay.spawnWrinklerLead = function() {
