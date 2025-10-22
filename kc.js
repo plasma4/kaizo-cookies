@@ -492,7 +492,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (!Crumbs.mobile) { decay.gamePauseL.style.display = 'none'; }
 		}
-		decay.timeSlowMultiplier = 0.25;
+		decay.timeSlowMultiplier = 0.4;
 		AddEvent(document, 'keydown', function(e) {
 			if (Game.OnAscend || Game.AscendTimer) { return; }
 			if (e.key.toLowerCase() == 'control') {
@@ -2181,7 +2181,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (decay.unlocked) { decay.triggerNotif('initiate'); }
 			if (decay.gen > 1.2) { decay.triggerNotif('purity'); }
 			//if (decay.gen <= 0.5) { decay.triggerNotif('gpoc'); }
-			if (decay.incMult >= 0.08) { decay.triggerNotif('decayII'); }
+			//if (decay.incMult >= 0.08) { decay.triggerNotif('decayII'); }
 			//if (Game.buffCount() && decay.gen <= 0.5) { decay.triggerNotif('buff'); }
 			//if (Game.gcBuffCount() > 1) { decay.triggerNotif('multipleBuffs'); }
 			//if (Game.Objects['Idleverse'].amount > 0 && Game.Objects['Cortex baker'].amount > 0) { decay.triggerNotif('buildVariance'); } //this is kinda dumb
@@ -2814,7 +2814,7 @@ Game.registerMod("Kaizo Cookies", {
 			const powFactor = 0.5 + (decay.challengeStatus('combo1')?0.15:0) + 0.01 * log10Max;
 			Game.log10CookiesSimulated = Math.max(Game.log10Cookies, 
 				Math.min(
-					Math.max(Game.TCount - 60 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps, 0) / (400 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps), 1
+					Math.max(Game.TCount - 20 * 60 * Game.fps, 0) / (400 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps), 1
 				)
 				 * (log10Max - log10Max / 6)
 			);
