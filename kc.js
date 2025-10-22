@@ -2814,7 +2814,7 @@ Game.registerMod("Kaizo Cookies", {
 			const powFactor = 0.5 + (decay.challengeStatus('combo1')?0.15:0) + 0.01 * log10Max;
 			Game.log10CookiesSimulated = Math.max(Game.log10Cookies, 
 				Math.min(
-					Math.max(Game.TCount - 20 * 60 * Game.fps, 0) / (400 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps), 1
+					Math.max(Game.TCount - 30 * 60 * Game.fps, 0) / (400 * Math.pow(1 / log10Max, powFactor) * 60 * Game.fps), 1
 				)
 				 * (log10Max - log10Max / 6)
 			);
@@ -6238,6 +6238,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 		Game.doLumps = function() {
 			if (Game.lumpRefill>0) Game.lumpRefill -= PForPause.timeFactor;
+			Game.lumpRefill = Math.max(Game.lumpRefill, 0);
 			
 			if (!Game.canLumps()) {Game.removeClass('lumpsOn');return;}
 			if (Game.lumpsTotal==-1)
