@@ -705,6 +705,7 @@ Game.registerMod("Kaizo Cookies", {
 			l('notes').classList.remove('adjusted');
 			decay.isNewLayout = false;
 		}
+		decay.changeGameLayout();
 
 		let mousePosDiv = document.createElement('div');
 		mousePosDiv.id = 'mousePosDisplay';
@@ -2844,7 +2845,7 @@ Game.registerMod("Kaizo Cookies", {
 			for (let i in Game.UpgradesByPool['tech']) {
 				if (Game.Has(Game.UpgradesByPool['tech'][i].name)) { mult *= 1.02; }
 			}
-			if (Game.Has('Caramelized luxury')) { mult *= 1 + Math.min(Game.lumpsTotal * 0.05, 0.8) + Game.Has('High-fructose sugar lumps')?(Math.min(Math.max(Game.lumpsTotal - 16, 0) * 0.02, 0.8)):0; }
+			if (Game.Has('Caramelized luxury')) { mult *= 1 + Math.min(Game.lumpsTotal * 0.05, 0.8) + (Game.Has('High-fructose sugar lumps')?(Math.min(Math.max(Game.lumpsTotal - 16, 0) * 0.02, 0.8)):0); }
 			mult *= decay.furnaceBoost;
 			if (decay.challengeStatus('speedsac')) { mult *= 1 + 0.2 * Math.min(gap.convertTimes, 4); }
 			return mult * 10; //10 as the default multiplier
@@ -15659,6 +15660,7 @@ Game.registerMod("Kaizo Cookies", {
 		kaizoCookies.adjustTimeSlowMultiplier(decay.prefs.strongTimeSlow?0.4:0.5);
 		if (decay.prefs.prestigeProgressDisplay && Game.prestige > 0 && Game.ascensionMode != 1) { decay.togglePreP(true); }
 		if (decay.prefs.newLayout) { decay.changeGameLayout(); }
+		else { decay.restoreOldGameLayout(); }
 		
 		strIn = str[11].split(',');
 		for (let i = 0; i < strIn.length; i++) {
