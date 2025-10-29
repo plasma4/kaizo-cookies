@@ -267,7 +267,7 @@ Game.registerMod("Kaizo Cookies", {
 	},
 	callHeader: function() {
 		if (this.saveFile) {
-			Game.SaveTo = 'kaizoCookiesSave';
+			Game.SaveTo = 'garbageSave';
 			this.loadWrapper();
 		} else {
 			Game.Prompt(`<id kaizoFirstLoadConfirmPrompt><noClose><h3>${loc('Before you start...')}</h3><div class="block">
@@ -281,7 +281,7 @@ Game.registerMod("Kaizo Cookies", {
 				<br><br>${loc('While you may export and import your main save into the new save, doing so is <b>highly discouraged</b>, is <b>cheating</b>, and will likely <b>heavily break the game</b>.')}
 				<div class="line"></div>
 				${loc('Once you\'ve read and understood the above, click <b>Let\'s go!</b> to start playing. Enjoy!')}
-			</div>`, [[loc('Let\'s go!'), 'Game.HardReset(2); Game.SaveTo = "kaizoCookiesSave"; kaizoCookies.loadWrapper(); Game.Notify(loc("Fetching assets..."), "", 6); Game.ClosePrompt();'], [loc('Nevermind'), 'Game.ClosePrompt();']], 0, 'widePrompt');
+			</div>`, [[loc('Let\'s go!'), 'Game.HardReset(2); Game.SaveTo = "garbageSave"; kaizoCookies.loadWrapper(); Game.Notify(loc("Fetching assets..."), "", 6); Game.ClosePrompt();'], [loc('Nevermind'), 'Game.ClosePrompt();']], 0, 'widePrompt');
 		}
 	},
 	modWarn: function(modList) {
@@ -705,7 +705,6 @@ Game.registerMod("Kaizo Cookies", {
 			l('notes').classList.remove('adjusted');
 			decay.isNewLayout = false;
 		}
-		decay.changeGameLayout();
 
 		let mousePosDiv = document.createElement('div');
 		mousePosDiv.id = 'mousePosDisplay';
@@ -15339,6 +15338,8 @@ Game.registerMod("Kaizo Cookies", {
 
 		Game.RebuildUpgrades();
 
+		decay.changeGameLayout();
+
 		this.testCompute = function() {
 			let hhhh = Date.now();
 			Game.Logic();
@@ -15360,6 +15361,7 @@ Game.registerMod("Kaizo Cookies", {
 				l('logButton').classList.add('hasUpdate'); 
 			} 
 		}, 500);
+		Game.saveTo = 'kaizoCookiesSave';
 		this.canLoad = true;
 		//if (!this.hasLoaded && this.loadStr) { this.applyLoad(this.loadStr); }
 	},
