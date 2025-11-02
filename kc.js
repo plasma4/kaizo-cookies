@@ -15361,9 +15361,9 @@ Game.registerMod("Kaizo Cookies", {
 				l('logButton').classList.add('hasUpdate'); 
 			} 
 		}, 500);
-		Game.saveTo = 'kaizoCookiesSave';
+		Game.SaveTo = 'kaizoCookiesSave';
 		this.canLoad = true;
-		//if (!this.hasLoaded && this.loadStr) { this.applyLoad(this.loadStr); }
+		//if (!this.hasLoaded && this.loadStr && this.loadStr != 'DOINIT') { this.tryApplyLoad(this.loadStr); }
 	},
 	save: function() {
 		if (window.isEE) { return 'DOINIT'; }
@@ -15371,6 +15371,7 @@ Game.registerMod("Kaizo Cookies", {
 			if (Game.modSaveData['Kaizo Cookies']) { return Game.modSaveData['Kaizo Cookies']; }
 			else { return 'DOINIT'; }
 		}
+		console.log('a');
         let str = kaizoCookies.version + '/';
         for(let i of kaizoCookies.achievements) {
           str+=i.unlocked; //using comma works like that in python but not js
@@ -15441,6 +15442,7 @@ Game.registerMod("Kaizo Cookies", {
 		}
 
 		str += '/' + decay.saveFurnace() + '/' + decay.clicksEligibleForPowerOrbs + '/' + decay.keepsakeSeason + '/' + decay.clicksKept + '/' + decay.saveLumpToys() + '/' + decay.speedsacChallengePrevStore;
+		console.log('Kaizo cookies saved. Save string: '+str);
         return str;
     },
 	loadStr: '',
@@ -15455,14 +15457,9 @@ Game.registerMod("Kaizo Cookies", {
     load: function(str) {
 		//resetting stuff
 		this.loadStr = str;
-		if (this.canLoad && str != 'DOINIT') { 
-			try { this.applyLoad(str); } catch (e) { 
-				Game.prefs.autosave = 0;
-				kaizoCookies.pauseGame();
-				kaizoCookies.canPauseGame = false;
-				Game.Prompt('<id kaizoLoadError><noClose><h3>'+loc('Kaizo Cookies load error')+'</h3><div class="line"></div>'+loc('There was an error while loading your Kaizo Cookies save. Please open the developer console, screenshot the contents, export the save below, and report it at <a href="%1" target="_blank">the discord server</a>, then CLOSE THE GAME. DO NOT SAVE UNDER ANY CIRCUMSTANCE UNTIL THE ISSUE IS FIXED.', 'https://discord.gg/Ae2njxT4Tx')+'<div class="line"></div>'+'<div class="block"><textarea id="textareaPrompt" style="width:100%;height:128px;" readonly>'+Game.WriteSave(1)+'</textarea></div>', [], 0, 'widePrompt');
-				console.error(e); 
-			}
+		console.log(str, this.canLoad, this.hasLoaded);
+		if (this.canLoad && (!this.hasLoaded) && str != 'DOINIT') { 
+			this.tryApplyLoad(str);
 			return; 
 		}
 	},
@@ -15537,6 +15534,15 @@ Game.registerMod("Kaizo Cookies", {
 		if (isv(strs[10])) { Game.shimmerTypes.reindeer.time = parseInt(strs[10]) / 2; }
 		if (isv(strs[11])) { this.loadModdedBuffs(strs[11]); }
 	},
+	tryApplyLoad: function(str) {
+		try { this.applyLoad(str); } catch (e) { 
+			Game.prefs.autosave = 0;
+			kaizoCookies.pauseGame();
+			kaizoCookies.canPauseGame = false;
+			Game.Prompt('<id kaizoLoadError><noClose><h3>'+loc('Kaizo Cookies load error')+'</h3><div class="line"></div>'+loc('There was an error while loading your Kaizo Cookies save. Please open the developer console, screenshot the contents, export the save below, and report it at <a href="%1" target="_blank">the discord server</a>, then CLOSE THE GAME. DO NOT SAVE UNDER ANY CIRCUMSTANCE UNTIL THE ISSUE IS FIXED.', 'https://discord.gg/Ae2njxT4Tx')+'<div class="line"></div>'+'<div class="block"><textarea id="textareaPrompt" style="width:100%;height:128px;" readonly>'+Game.WriteSave(1)+'</textarea></div>', [], 0, 'widePrompt');
+			console.error(e); 
+		}
+	},
 	applyLoad: function(str) {
 		console.log('Kaizo Cookies loaded. Save string: '+str);
 		if (kaizoCookies.unpauseGame) { kaizoCookies.unpauseGame(); }
@@ -15578,6 +15584,8 @@ Game.registerMod("Kaizo Cookies", {
 		if (decay.gen < decay.breakingPoint && Game.Has('Legacy')) {
 			decay.onDecayBreak();
 		}
+
+		console.log('2');
 		
 		strIn = str[3].split(',');
 		if (isv(strIn[0])) { decay.halt = parseFloat(strIn[0]); }
