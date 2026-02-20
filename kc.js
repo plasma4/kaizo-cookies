@@ -2846,7 +2846,7 @@ Game.registerMod("Kaizo Cookies", {
 			}
 			if (Game.Has('Caramelized luxury')) { mult *= 1 + Math.min(Game.lumpsTotal * 0.05, 0.8) + (Game.Has('High-fructose sugar lumps')?(Math.min(Math.max(Game.lumpsTotal - 16, 0) * 0.02, 0.8)):0); }
 			mult *= decay.furnaceBoost;
-			if (decay.challengeStatus('speedsac')) { mult *= 1 + 0.2 * Math.min(gap.convertTimes, 4); }
+			if (decay.challengeStatus('speedsac') && gap) { mult *= 1 + 0.2 * Math.min(gap.convertTimes, 4); }
 			return mult * 10; //10 as the default multiplier
 		}
 		eval('Game.CalculateGains='+Game.CalculateGains.toString().replace(`var rawCookiesPs=Game.cookiesPs*mult;`, `mult = decay.rawCpsMults(mult); var rawCookiesPs=Game.cookiesPs*mult;`));
